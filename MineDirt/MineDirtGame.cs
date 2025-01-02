@@ -8,6 +8,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
 using MineDirt.Src.Blocks;
+using System.Diagnostics;
 
 namespace MineDirt;
 public class MineDirtGame : Game
@@ -28,6 +29,16 @@ public class MineDirtGame : Game
         FillMode = FillMode.Solid,
         CullMode = CullMode.None,
     };
+
+    private const int TargetUPS = 30;        // Updates per second
+    private const int TargetFPS = 0;         // Frames per second (0 for uncapped)
+    private double UpdateInterval => 1.0 / TargetUPS;
+    private double FrameInterval => TargetFPS > 0 ? 1.0 / TargetFPS : 0.0;
+
+    private double elapsedUpdateTime = 0;
+    private double elapsedFrameTime = 0;
+
+    private Stopwatch stopwatch = new Stopwatch();
 
 #if DEBUG
     public static ImGuiRenderer GuiRenderer;
@@ -142,8 +153,10 @@ public class MineDirtGame : Game
         GraphicsDevice.SamplerStates[0] = SamplerState.PointClamp;
         GraphicsDevice.DepthStencilState = DepthStencilState.Default;
 
+#if DEBUG
         if (RenderWireframes)
             GraphicsDevice.RasterizerState = wireFrameRasterizeState;
+#endif
 
         //// Set the effect matrices for the camera
         effect.View = camera.View;
