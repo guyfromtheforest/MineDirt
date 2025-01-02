@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework.Input;
 using System;
 using System.Diagnostics;
 using System.Collections.Generic;
+using MineDirt.Src;
 
 namespace MineDirt;
 public class MineDirtGame : Game
@@ -21,6 +22,8 @@ public class MineDirtGame : Game
     public static Texture2D BlockTextures;
 
     private SpriteBatch _spriteBatch;
+
+    public static Noise Noise = new Noise(1234);
 
     BasicEffect effect;
     Chunk chunk; 

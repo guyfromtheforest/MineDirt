@@ -80,7 +80,7 @@ public class Debug
             // Create an ImGui window for camera coordinates
             if (!hasSetWindowSize)
             {
-                ImGui.SetWindowSize(new System.Numerics.Vector2(320, 100));
+                ImGui.SetWindowSize(new System.Numerics.Vector2(400, 120));
                 hasSetWindowSize = true;
             }
 

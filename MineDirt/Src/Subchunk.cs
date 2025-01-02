@@ -1,7 +1,9 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 using MineDirt;
 using MineDirt.Src;
+using System;
 using System.Collections.Generic;
 
 public class Subchunk
@@ -28,21 +30,48 @@ public class Subchunk
 
     private void GenerateBlocks()
     {
+
         for (int x = 0; x < Size; x++)
-            for (int y = 0; y < Size; y++)
-                for (int z = 0; z < Size; z++)
+        {
+            for (int z = 0; z < Size; z++)
+            {
+                float noiseValue = MineDirtGame.Noise.Generate(Position.X + x, Position.Z + z) * Chunk.Height; // Scale noise to desired height
+                int maxHeight = MathHelper.Clamp((int)Math.Round(noiseValue), 1, Chunk.Height * Size - 1);
+
+                for (int y = 0; y < Size; y++)
                 {
-                    // Create a block at each position in the chunk
                     Vector3 blockPosition = Position + new Vector3(x, y, z);
-                    if(blockPosition.Y == 0)
+
+                    if (blockPosition.Y == 0)
+                    {
+                        // Bedrock at the bottom layer
                         ChunkBlocks.Add(Blocks.Bedrock(blockPosition));
+                    }
+                    else if (blockPosition.Y < maxHeight - 1)
+                    {
+                        // Stone below the surface
+                        ChunkBlocks.Add(Blocks.Stone(blockPosition));
+                    }
+                    else if (blockPosition.Y == maxHeight - 1)
+                    {
+                        // Grass on the surface
+                        ChunkBlocks.Add(Blocks.Grass(blockPosition));
+                    }
                     else
-                        ChunkBlocks.Add(Blocks.Dirt(blockPosition));
+                    {
+                        // Air (no block) above the surface
+                        // Optionally skip adding blocks above the surface for optimization
+                    }
                 }
+            }
+        }
     }
 
     private void CreateBuffers()
     {
+        if(ChunkBlocks.Count == 0)
+            return; 
+
         // Calculate total number of vertices and indices needed for the chunk
         int totalVertices = ChunkBlocks.Count * 24;  // 24 vertices per block (6 faces, 4 vertices per face)
         int totalIndices = ChunkBlocks.Count * 36;   // 36 indices per block (6 faces, 2 triangles per face)
@@ -78,6 +107,9 @@ public class Subchunk
 
     public void Draw(BasicEffect effect)
     {
+        if(ChunkBlocks.Count == 0)
+            return;
+
         // Set the texture for the chunk
         effect.TextureEnabled = true;
         effect.Texture = MineDirtGame.BlockTextures;
