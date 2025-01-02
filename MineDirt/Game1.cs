@@ -8,24 +8,58 @@ public class Game1 : Game
     private GraphicsDeviceManager _graphics;
     private SpriteBatch _spriteBatch;
 
-    Camera3D camera; 
+    Camera3D camera;
+    Texture2D blockTextures;
 
     #region Stuff   
 
-    VertexPositionColor[] vertices =
-    [
-        // Front face
-        new VertexPositionColor(new Vector3(-1, 1, -1), Color.Red),
-        new VertexPositionColor(new Vector3(1, 1, -1), Color.Green),
-        new VertexPositionColor(new Vector3(-1, -1, -1), Color.Blue),
-        new VertexPositionColor(new Vector3(1, -1, -1), Color.Yellow),
+    SamplerState pointSampler = new SamplerState
+{
+    Filter = TextureFilter.Point, // This ensures point filtering is used
+    AddressU = TextureAddressMode.Wrap, // This controls how textures behave at the horizontal edges (Wrap, Clamp, etc.)
+    AddressV = TextureAddressMode.Wrap, // Same as above, controls behavior at vertical edges
+};
 
-        // Back face
-        new VertexPositionColor(new Vector3(-1, 1, 1), Color.Purple),
-        new VertexPositionColor(new Vector3(1, 1, 1), Color.Orange),
-        new VertexPositionColor(new Vector3(-1, -1, 1), Color.Cyan),
-        new VertexPositionColor(new Vector3(1, -1, 1), Color.Magenta),
-    ];
+
+    // Define the vertices with texture coordinates (UV mapping)
+VertexPositionTexture[] vertices =
+[
+    // Front face (using the side texture)
+    new VertexPositionTexture(new Vector3(-1, 1, -1), new Vector2(0.0625f, 0f)), // top-left
+    new VertexPositionTexture(new Vector3(1, 1, -1), new Vector2(0.125f, 0f)),  // top-right
+    new VertexPositionTexture(new Vector3(-1, -1, -1), new Vector2(0.0625f, 0.0625f)), // bottom-left
+    new VertexPositionTexture(new Vector3(1, -1, -1), new Vector2(0.125f, 0.0625f)),  // bottom-right
+
+    // Back face (using the side texture)
+    new VertexPositionTexture(new Vector3(-1, 1, 1), new Vector2(0.0625f, 0f)),  // top-left
+    new VertexPositionTexture(new Vector3(1, 1, 1), new Vector2(0.125f, 0f)),   // top-right
+    new VertexPositionTexture(new Vector3(-1, -1, 1), new Vector2(0.0625f, 0.0625f)),  // bottom-left
+    new VertexPositionTexture(new Vector3(1, -1, 1), new Vector2(0.125f, 0.0625f)),   // bottom-right
+
+    // Left face (using the side texture)
+    new VertexPositionTexture(new Vector3(-1, 1, -1), new Vector2(0.0625f, 0f)),  // top-left
+    new VertexPositionTexture(new Vector3(-1, 1, 1), new Vector2(0.125f, 0f)),   // top-right
+    new VertexPositionTexture(new Vector3(-1, -1, -1), new Vector2(0.0625f, 0.0625f)),  // bottom-left
+    new VertexPositionTexture(new Vector3(-1, -1, 1), new Vector2(0.125f, 0.0625f)),   // bottom-right
+
+    // Right face (using the side texture)
+    new VertexPositionTexture(new Vector3(1, 1, -1), new Vector2(0.0625f, 0f)),  // top-left
+    new VertexPositionTexture(new Vector3(1, 1, 1), new Vector2(0.125f, 0f)),   // top-right
+    new VertexPositionTexture(new Vector3(1, -1, -1), new Vector2(0.0625f, 0.0625f)),  // bottom-left
+    new VertexPositionTexture(new Vector3(1, -1, 1), new Vector2(0.125f, 0.0625f)),   // bottom-right
+
+    // Top face (using the top texture)
+    new VertexPositionTexture(new Vector3(-1, 1, -1), new Vector2(0f, 0f)),  // top-left
+    new VertexPositionTexture(new Vector3(1, 1, -1), new Vector2(0.0625f, 0f)),   // top-right
+    new VertexPositionTexture(new Vector3(-1, 1, 1), new Vector2(0f, 0.0625f)),   // bottom-left
+    new VertexPositionTexture(new Vector3(1, 1, 1), new Vector2(0.0625f, 0.0625f)),    // bottom-right
+
+    // Bottom face (using the bottom texture)
+    new VertexPositionTexture(new Vector3(-1, -1, -1), new Vector2(0.125f, 0f)), // top-left
+    new VertexPositionTexture(new Vector3(1, -1, -1), new Vector2(0.1875f, 0f)),  // top-right
+    new VertexPositionTexture(new Vector3(-1, -1, 1), new Vector2(0.125f, 0.0625f)),  // bottom-left
+    new VertexPositionTexture(new Vector3(1, -1, 1), new Vector2(0.1875f, 0.0625f))    // bottom-right
+];
 
     short[] indices =
     [
@@ -34,13 +68,13 @@ public class Game1 : Game
         // Back face
         4, 6, 5, 5, 6, 7,
         // Left face
-        0, 2, 4, 4, 2, 6,
+        8, 9, 10, 10, 9, 11,
         // Right face
-        1, 5, 3, 3, 5, 7,
+        12, 13, 14, 14, 13, 15,
         // Top face
-        0, 4, 1, 1, 4, 5,
+        16, 17, 18, 18, 17, 19,
         // Bottom face
-        2, 3, 6, 6, 3, 7
+        20, 21, 22, 22, 21, 23
     ];
 
     VertexBuffer vertexBuffer;
@@ -54,6 +88,14 @@ public class Game1 : Game
         _graphics = new GraphicsDeviceManager(this);
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
+
+        // Set to fullscreen
+        _graphics.IsFullScreen = true;
+
+        // Set the resolution for fullscreen mode
+        _graphics.PreferredBackBufferWidth = 1920;  // Set your preferred width
+        _graphics.PreferredBackBufferHeight = 1080; // Set your preferred height
+        _graphics.ApplyChanges();
     }
 
     protected override void Initialize()
@@ -69,28 +111,25 @@ public class Game1 : Game
     {
         _spriteBatch = new SpriteBatch(GraphicsDevice);
 
-        // Create and set vertex buffer
-        vertexBuffer = new VertexBuffer(GraphicsDevice, typeof(VertexPositionColor), vertices.Length, BufferUsage.WriteOnly);
+        blockTextures = Content.Load<Texture2D>("Textures/Blocks");
+
+        // Create the vertex buffer
+        vertexBuffer = new VertexBuffer(GraphicsDevice, typeof(VertexPositionTexture), vertices.Length, BufferUsage.WriteOnly);
         vertexBuffer.SetData(vertices);
 
-        // Create and set index buffer
+        // Create the index buffer
         indexBuffer = new IndexBuffer(GraphicsDevice, IndexElementSize.SixteenBits, indices.Length, BufferUsage.WriteOnly);
         indexBuffer.SetData(indices);
 
-        // Initialize BasicEffect
+        // Initialize the BasicEffect
         effect = new BasicEffect(GraphicsDevice)
         {
-            VertexColorEnabled = true,
-            View = Matrix.CreateLookAt(
-                new Vector3(0, 0, 5),  // Camera position
-                Vector3.Zero,          // Look at
-                Vector3.Up),           // Up direction
-            Projection = Matrix.CreatePerspectiveFieldOfView(
-                MathHelper.PiOver4,
-                GraphicsDevice.Viewport.AspectRatio,
-                0.1f, 100f)
+            VertexColorEnabled = false, // Disable color shading
+            TextureEnabled = true,      // Enable texture mapping
+            Texture = blockTextures,     // Set the loaded texture
+            View = Matrix.CreateLookAt(new Vector3(0, 0, 5), Vector3.Zero, Vector3.Up),
+            Projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 0.1f, 100f)
         };
-        // TODO: use this.Content to load your game content here
     }
 
     protected override void Update(GameTime gameTime)
@@ -112,20 +151,25 @@ public class Game1 : Game
     protected override void Draw(GameTime gameTime)
     {
         GraphicsDevice.Clear(Color.CornflowerBlue);
+        GraphicsDevice.RasterizerState = RasterizerState.CullNone;
 
+        // Set the texture and effect matrices
+        effect.Texture = blockTextures;
+        effect.TextureEnabled = true;
         effect.View = camera.View;
         effect.Projection = camera.Projection;
 
-        // Bind vertex and index buffers
+        // Set the vertex buffer and index buffer
+        GraphicsDevice.SamplerStates[0] = pointSampler;
         GraphicsDevice.SetVertexBuffer(vertexBuffer);
         GraphicsDevice.Indices = indexBuffer;
 
-        // Apply effect and draw
+        // Draw the cube
         foreach (var pass in effect.CurrentTechnique.Passes)
         {
             pass.Apply();
             GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, indices.Length / 3);
-}
+        }
 
         base.Draw(gameTime);
     }
