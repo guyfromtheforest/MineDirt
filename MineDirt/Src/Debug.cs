@@ -10,12 +10,16 @@ public class Debug
 {
     public ImGuiRenderer GuiRenderer;
 
+    private bool hasSetWindowSize = false;
+    
     private float fps = 0f;
     private float ups = 0f;
     private float fpsTimer = 0f;
     private float upsTimer = 0f;
     private int frameCount = 0;
     private int updateCount = 0;
+
+    private float cameraSpeed = 15f;
 
     private bool RenderWireframes = false;
 
@@ -29,6 +33,7 @@ public class Debug
         FillMode = FillMode.Solid,
         CullMode = CullMode.None,
     };
+
 
     public void Initialize()
     {
@@ -72,7 +77,12 @@ public class Debug
         // Create an ImGui window for camera coordinates
         if (ImGui.Begin("Debug"))
         {
-            ImGui.SetWindowSize(new System.Numerics.Vector2(320, 100));
+            // Create an ImGui window for camera coordinates
+            if (!hasSetWindowSize)
+            {
+                ImGui.SetWindowSize(new System.Numerics.Vector2(320, 100));
+                hasSetWindowSize = true;
+            }
 
             // Display the camera's position in the window
             ImGui.Text($"X: {MineDirtGame.Camera.Position.X}, Y: {MineDirtGame.Camera.Position.Y}, Z: {MineDirtGame.Camera.Position.Z}");
@@ -83,6 +93,10 @@ public class Debug
 
             // Checkbox 
             ImGui.Checkbox("Render Wireframes", ref RenderWireframes);
+
+            // Slider for movement speed
+            ImGui.SliderFloat("Movement Speed", ref cameraSpeed, 0.1f, 50f);
+            Camera3D.MovementSpeed = cameraSpeed;
         }
         ImGui.End();
 
