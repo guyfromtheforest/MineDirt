@@ -22,6 +22,12 @@ public class MineDirtGame : Game
     BasicEffect effect;
     Chunk chunk;
 
+    private RasterizerState defaultRasterizeState = new ()
+    {
+        FillMode = FillMode.Solid, 
+        CullMode = CullMode.None,
+    };
+
 #if DEBUG
     public static ImGuiRenderer GuiRenderer;
 
@@ -31,6 +37,14 @@ public class MineDirtGame : Game
     private float upsTimer = 0f;
     private int frameCount = 0;
     private int updateCount = 0;
+
+    private bool RenderWireframes = false;
+
+    private RasterizerState wireFrameRasterizeState = new()
+    {
+        FillMode = FillMode.WireFrame,
+    };
+
 #endif
 
     public MineDirtGame()
@@ -115,10 +129,13 @@ public class MineDirtGame : Game
     protected override void Draw(GameTime gameTime)
     {
         GraphicsDevice.Clear(Color.CornflowerBlue);
-        GraphicsDevice.RasterizerState = RasterizerState.CullNone;
+        GraphicsDevice.RasterizerState = defaultRasterizeState;
         // Set texture sampling to Point to avoid blurriness (pixelated textures)
         GraphicsDevice.SamplerStates[0] = SamplerState.PointClamp;
         GraphicsDevice.DepthStencilState = DepthStencilState.Default;
+
+        if(RenderWireframes)
+            GraphicsDevice.RasterizerState = wireFrameRasterizeState;
 
         //// Set the effect matrices for the camera
         effect.View = camera.View;
@@ -152,6 +169,9 @@ public class MineDirtGame : Game
             // Display FPS and UPS
             ImGui.Text($"FPS: {fps}");
             ImGui.Text($"UPS: {ups}");
+
+            // Checkbox 
+            ImGui.Checkbox("Render Wireframes", ref RenderWireframes);
         }
         ImGui.End();
 
