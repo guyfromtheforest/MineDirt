@@ -1,8 +1,4 @@
-﻿#if DEBUG
-using MonoGame.ImGuiNet;
-#endif
-
-using ImGuiNET;
+﻿using ImGuiNET;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -13,22 +9,21 @@ using System.Diagnostics;
 namespace MineDirt;
 public class MineDirtGame : Game
 {
-    public static GraphicsDeviceManager Graphics;
-    private SpriteBatch _spriteBatch;
+#if DEBUG
+    MineDirt.Src.Debug debug = new();
+#endif
 
+    public static MineDirtGame Instance;
+    public static GraphicsDeviceManager Graphics;
     public static bool IsMouseCursorVisible = false;
 
-    Camera3D camera;
+    public static Camera3D Camera;
     public static Texture2D BlockTextures;
+
+    private SpriteBatch _spriteBatch;
 
     BasicEffect effect;
     Chunk chunk;
-
-    private RasterizerState defaultRasterizeState = new()
-    {
-        FillMode = FillMode.Solid,
-        CullMode = CullMode.None,
-    };
 
     private const int TargetUPS = 30;        // Updates per second
     private const int TargetFPS = 0;         // Frames per second (0 for uncapped)
@@ -39,25 +34,6 @@ public class MineDirtGame : Game
     private double elapsedFrameTime = 0;
 
     private Stopwatch stopwatch = new Stopwatch();
-
-#if DEBUG
-    public static ImGuiRenderer GuiRenderer;
-
-    private float fps = 0f;
-    private float ups = 0f;
-    private float fpsTimer = 0f;
-    private float upsTimer = 0f;
-    private int frameCount = 0;
-    private int updateCount = 0;
-
-    private bool RenderWireframes = false;
-
-    private RasterizerState wireFrameRasterizeState = new()
-    {
-        FillMode = FillMode.WireFrame,
-    };
-
-#endif
 
     public MineDirtGame()
     {
@@ -79,18 +55,20 @@ public class MineDirtGame : Game
         Graphics.PreferredBackBufferWidth = 1920;  // Set your preferred width
         Graphics.PreferredBackBufferHeight = 1080; // Set your preferred height
         Graphics.ApplyChanges();
+
+        Instance = this;
     }
 
     protected override void Initialize()
     {
-#if DEBUG
-        GuiRenderer = new ImGuiRenderer(this);
-#endif
-
-        camera = new Camera3D(new Vector3(0, 10, 0), GraphicsDevice.Viewport.AspectRatio);
+        Camera = new Camera3D(new Vector3(0, 10, 0), GraphicsDevice.Viewport.AspectRatio);
 
         chunk = new(Vector3.Zero);
 
+
+#if DEBUG
+        debug.Initialize();
+#endif
         base.Initialize();
     }
 
@@ -111,7 +89,7 @@ public class MineDirtGame : Game
         };
 
 #if DEBUG
-        GuiRenderer.RebuildFontAtlas();
+        debug.LoadContent();
 #endif
     }
 
@@ -124,79 +102,37 @@ public class MineDirtGame : Game
         var mouseState = Mouse.GetState();
 
         // Update the camera with the current input and GraphicsDevice for mouse centering
-        camera.Update(gameTime, keyboardState, mouseState, GraphicsDevice);
+        Camera.Update(gameTime, keyboardState, mouseState, GraphicsDevice);
 
         IsMouseVisible = IsMouseCursorVisible;
 
-        base.Update(gameTime);
 
 #if DEBUG
-        float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
-
-        // Update UPS (Updates Per Second)
-        upsTimer += deltaTime;
-        updateCount++;
-        if (upsTimer >= 1f) // Update every second
-        {
-            ups = updateCount;
-            upsTimer -= 1f;  // Reset the timer
-            updateCount = 0;
-        }
+        debug.Update(gameTime);
 #endif
+        base.Update(gameTime);
     }
 
     protected override void Draw(GameTime gameTime)
     {
+#if DEBUG
+        debug.BeginDraw(gameTime);
+#endif
+
         GraphicsDevice.Clear(Color.CornflowerBlue);
-        GraphicsDevice.RasterizerState = defaultRasterizeState;
-        // Set texture sampling to Point to avoid blurriness (pixelated textures)
         GraphicsDevice.SamplerStates[0] = SamplerState.PointClamp;
         GraphicsDevice.DepthStencilState = DepthStencilState.Default;
 
-#if DEBUG
-        if (RenderWireframes)
-            GraphicsDevice.RasterizerState = wireFrameRasterizeState;
-#endif
-
         //// Set the effect matrices for the camera
-        effect.View = camera.View;
-        effect.Projection = camera.Projection;
+        effect.View = Camera.View;
+        effect.Projection = Camera.Projection;
 
         chunk.Draw(effect);
 
         base.Draw(gameTime);
 
 #if DEBUG
-        GuiRenderer.BeginLayout(gameTime);
-
-        // Calculate FPS (Frames Per Second)
-        fpsTimer += (float)gameTime.ElapsedGameTime.TotalSeconds;
-        frameCount++;
-        if (fpsTimer >= 1f) // Update every second
-        {
-            fps = frameCount;
-            fpsTimer -= 1f; // Reset the timer
-            frameCount = 0;
-        }
-
-        // Create an ImGui window for camera coordinates
-        if (ImGui.Begin("Debug"))
-        {
-            ImGui.SetWindowSize(new System.Numerics.Vector2(320, 100));
-
-            // Display the camera's position in the window
-            ImGui.Text($"X: {camera.Position.X}, Y: {camera.Position.Y}, Z: {camera.Position.Z}");
-
-            // Display FPS and UPS
-            ImGui.Text($"FPS: {fps}");
-            ImGui.Text($"UPS: {ups}");
-
-            // Checkbox 
-            ImGui.Checkbox("Render Wireframes", ref RenderWireframes);
-        }
-        ImGui.End();
-
-        GuiRenderer.EndLayout();
+        debug.EndDraw(gameTime);
 #endif
     }
 }
