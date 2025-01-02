@@ -17,7 +17,7 @@ public class Camera3D
 
     public static float MovementSpeed { get; set; } = 20.0f;
 
-    public Camera3D(Vector3 position, float aspectRatio, float fieldOfView = MathHelper.PiOver4, float nearPlane = 0.1f, float farPlane = 100f)
+    public Camera3D(Vector3 position, float aspectRatio, float fieldOfView = MathHelper.PiOver4, float nearPlane = 0.1f, float farPlane = 1000f)
     {
         Position = position;
         Projection = Matrix.CreatePerspectiveFieldOfView(fieldOfView, aspectRatio, nearPlane, farPlane);
