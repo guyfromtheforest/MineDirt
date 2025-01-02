@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using MineDirt.Src.Blocks;
 
 namespace MineDirt;
 public class Game1 : Game
@@ -10,76 +11,25 @@ public class Game1 : Game
 
     Camera3D camera;
     Texture2D blockTextures;
+    private VertexBuffer grassVertexBuffer;
+    GrassBlock grassBlock = new(Vector3.Zero);
+    Cobblestone cobblestone = new(new(0, -1, 0));
 
     #region Stuff   
 
     SamplerState pointSampler = new SamplerState
-{
-    Filter = TextureFilter.Point, // This ensures point filtering is used
-    AddressU = TextureAddressMode.Wrap, // This controls how textures behave at the horizontal edges (Wrap, Clamp, etc.)
-    AddressV = TextureAddressMode.Wrap, // Same as above, controls behavior at vertical edges
-};
-
-
-    // Define the vertices with texture coordinates (UV mapping)
-VertexPositionTexture[] vertices =
-[
-    // Front face (using the side texture)
-    new VertexPositionTexture(new Vector3(-1, 1, -1), new Vector2(0.0625f, 0f)), // top-left
-    new VertexPositionTexture(new Vector3(1, 1, -1), new Vector2(0.125f, 0f)),  // top-right
-    new VertexPositionTexture(new Vector3(-1, -1, -1), new Vector2(0.0625f, 0.0625f)), // bottom-left
-    new VertexPositionTexture(new Vector3(1, -1, -1), new Vector2(0.125f, 0.0625f)),  // bottom-right
-
-    // Back face (using the side texture)
-    new VertexPositionTexture(new Vector3(-1, 1, 1), new Vector2(0.0625f, 0f)),  // top-left
-    new VertexPositionTexture(new Vector3(1, 1, 1), new Vector2(0.125f, 0f)),   // top-right
-    new VertexPositionTexture(new Vector3(-1, -1, 1), new Vector2(0.0625f, 0.0625f)),  // bottom-left
-    new VertexPositionTexture(new Vector3(1, -1, 1), new Vector2(0.125f, 0.0625f)),   // bottom-right
-
-    // Left face (using the side texture)
-    new VertexPositionTexture(new Vector3(-1, 1, -1), new Vector2(0.0625f, 0f)),  // top-left
-    new VertexPositionTexture(new Vector3(-1, 1, 1), new Vector2(0.125f, 0f)),   // top-right
-    new VertexPositionTexture(new Vector3(-1, -1, -1), new Vector2(0.0625f, 0.0625f)),  // bottom-left
-    new VertexPositionTexture(new Vector3(-1, -1, 1), new Vector2(0.125f, 0.0625f)),   // bottom-right
-
-    // Right face (using the side texture)
-    new VertexPositionTexture(new Vector3(1, 1, -1), new Vector2(0.0625f, 0f)),  // top-left
-    new VertexPositionTexture(new Vector3(1, 1, 1), new Vector2(0.125f, 0f)),   // top-right
-    new VertexPositionTexture(new Vector3(1, -1, -1), new Vector2(0.0625f, 0.0625f)),  // bottom-left
-    new VertexPositionTexture(new Vector3(1, -1, 1), new Vector2(0.125f, 0.0625f)),   // bottom-right
-
-    // Top face (using the top texture)
-    new VertexPositionTexture(new Vector3(-1, 1, -1), new Vector2(0f, 0f)),  // top-left
-    new VertexPositionTexture(new Vector3(1, 1, -1), new Vector2(0.0625f, 0f)),   // top-right
-    new VertexPositionTexture(new Vector3(-1, 1, 1), new Vector2(0f, 0.0625f)),   // bottom-left
-    new VertexPositionTexture(new Vector3(1, 1, 1), new Vector2(0.0625f, 0.0625f)),    // bottom-right
-
-    // Bottom face (using the bottom texture)
-    new VertexPositionTexture(new Vector3(-1, -1, -1), new Vector2(0.125f, 0f)), // top-left
-    new VertexPositionTexture(new Vector3(1, -1, -1), new Vector2(0.1875f, 0f)),  // top-right
-    new VertexPositionTexture(new Vector3(-1, -1, 1), new Vector2(0.125f, 0.0625f)),  // bottom-left
-    new VertexPositionTexture(new Vector3(1, -1, 1), new Vector2(0.1875f, 0.0625f))    // bottom-right
-];
-
-    short[] indices =
-    [
-        // Front face
-        0, 1, 2, 2, 1, 3,
-        // Back face
-        4, 6, 5, 5, 6, 7,
-        // Left face
-        8, 9, 10, 10, 9, 11,
-        // Right face
-        12, 13, 14, 14, 13, 15,
-        // Top face
-        16, 17, 18, 18, 17, 19,
-        // Bottom face
-        20, 21, 22, 22, 21, 23
-    ];
+    {
+        Filter = TextureFilter.Point, // This ensures point filtering is used
+        AddressU = TextureAddressMode.Wrap, // This controls how textures behave at the horizontal edges (Wrap, Clamp, etc.)
+        AddressV = TextureAddressMode.Wrap, // Same as above, controls behavior at vertical edges
+    };
 
     VertexBuffer vertexBuffer;
     IndexBuffer indexBuffer;
     BasicEffect effect;
+    private IndexBuffer grassIndexBuffer;
+    private VertexBuffer cobblestoneVertexBuffer;
+    private IndexBuffer cobblestoneIndexBuffer;
 
     #endregion
 
@@ -112,14 +62,31 @@ VertexPositionTexture[] vertices =
         _spriteBatch = new SpriteBatch(GraphicsDevice);
 
         blockTextures = Content.Load<Texture2D>("Textures/Blocks");
+        // Create the vertex buffer for the GrassBlock
+        grassVertexBuffer = new VertexBuffer(GraphicsDevice, typeof(VertexPositionTexture), grassBlock.vertices.Length, BufferUsage.WriteOnly);
+        grassVertexBuffer.SetData(grassBlock.vertices);
 
-        // Create the vertex buffer
-        vertexBuffer = new VertexBuffer(GraphicsDevice, typeof(VertexPositionTexture), vertices.Length, BufferUsage.WriteOnly);
-        vertexBuffer.SetData(vertices);
+        // Create the index buffer for the GrassBlock
+        grassIndexBuffer = new IndexBuffer(GraphicsDevice, IndexElementSize.SixteenBits, grassBlock.indices.Length, BufferUsage.WriteOnly);
+        grassIndexBuffer.SetData(grassBlock.indices);
 
-        // Create the index buffer
-        indexBuffer = new IndexBuffer(GraphicsDevice, IndexElementSize.SixteenBits, indices.Length, BufferUsage.WriteOnly);
-        indexBuffer.SetData(indices);
+        // Create the vertex buffer for the Cobblestone
+        cobblestoneVertexBuffer = new VertexBuffer(GraphicsDevice, typeof(VertexPositionTexture), cobblestone.vertices.Length, BufferUsage.WriteOnly);
+        cobblestoneVertexBuffer.SetData(cobblestone.vertices);
+
+        // Create the index buffer for the Cobblestone
+        cobblestoneIndexBuffer = new IndexBuffer(GraphicsDevice, IndexElementSize.SixteenBits, cobblestone.indices.Length, BufferUsage.WriteOnly);
+        cobblestoneIndexBuffer.SetData(cobblestone.indices);
+
+        // Initialize the BasicEffect
+        effect = new BasicEffect(GraphicsDevice)
+        {
+            VertexColorEnabled = false,  // Disable color shading
+            TextureEnabled = true,      // Enable texture mapping
+            Texture = blockTextures,    // Set the loaded texture
+            View = Matrix.CreateLookAt(new Vector3(0, 0, 5), Vector3.Zero, Vector3.Up),
+            Projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 0.1f, 100f)
+        };
 
         // Initialize the BasicEffect
         effect = new BasicEffect(GraphicsDevice)
@@ -152,23 +119,36 @@ VertexPositionTexture[] vertices =
     {
         GraphicsDevice.Clear(Color.CornflowerBlue);
         GraphicsDevice.RasterizerState = RasterizerState.CullNone;
+        // Set texture sampling to Point to avoid blurriness (pixelated textures)
+        GraphicsDevice.SamplerStates[0] = SamplerState.PointClamp;
 
-        // Set the texture and effect matrices
-        effect.Texture = blockTextures;
-        effect.TextureEnabled = true;
+        // Set the effect matrices for the camera
         effect.View = camera.View;
         effect.Projection = camera.Projection;
 
-        // Set the vertex buffer and index buffer
-        GraphicsDevice.SamplerStates[0] = pointSampler;
-        GraphicsDevice.SetVertexBuffer(vertexBuffer);
-        GraphicsDevice.Indices = indexBuffer;
+        // Set the texture for each block and render them
+        effect.Texture = blockTextures; // Assuming the same texture for both, change as needed.
 
-        // Draw the cube
+        // Draw the GrassBlock
+        GraphicsDevice.SetVertexBuffer(grassVertexBuffer);
+        GraphicsDevice.Indices = grassIndexBuffer;
+
+        // Apply effect and draw the GrassBlock
         foreach (var pass in effect.CurrentTechnique.Passes)
         {
             pass.Apply();
-            GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, indices.Length / 3);
+            GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, grassBlock.indices.Length / 3);
+        }
+
+        // Draw the Cobblestone Block
+        GraphicsDevice.SetVertexBuffer(cobblestoneVertexBuffer);
+        GraphicsDevice.Indices = cobblestoneIndexBuffer;
+
+        // Apply effect and draw the Cobblestone Block
+        foreach (var pass in effect.CurrentTechnique.Passes)
+        {
+            pass.Apply();
+            GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, cobblestone.indices.Length / 3);
         }
 
         base.Draw(gameTime);
