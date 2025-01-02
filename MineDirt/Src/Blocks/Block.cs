@@ -9,9 +9,9 @@ using System.Threading.Tasks;
 namespace MineDirt.Src.Blocks;
 public class Block
 {
-    public short[] indices => Indices;
+    public short[] Indices => indices;
 
-    public static short[] Indices =
+    public static short[] indices =
     [
         // Front face
         0, 1, 2, 2, 1, 3,
@@ -27,7 +27,7 @@ public class Block
         20, 21, 22, 22, 21, 23
     ];
 
-    public VertexPositionTexture[] vertices;
+    public VertexPositionTexture[] Vertices;
 
     public Block(Vector3 pos, short[] textureAtlasIndices)
     {
@@ -43,7 +43,7 @@ public class Block
         ];
 
         // Define the vertices with texture coordinates (UV mapping)
-        vertices =
+        Vertices =
         [
             // Front face (using the side texture)
             new VertexPositionTexture(new Vector3(pos.X - 0.5f, pos.Y + 0.5f, pos.Z - 0.5f), textures[0][0]), // top-left
