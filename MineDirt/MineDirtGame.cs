@@ -11,27 +11,9 @@ public class MineDirtGame : Game
 
     Camera3D camera;
     public static Texture2D BlockTextures;
-    //private VertexBuffer grassVertexBuffer;
 
-    #region Stuff   
-
-    //SamplerState pointSampler = new SamplerState
-    //{
-    //    Filter = TextureFilter.Point, // This ensures point filtering is used
-    //    AddressU = TextureAddressMode.Wrap, // This controls how textures behave at the horizontal edges (Wrap, Clamp, etc.)
-    //    AddressV = TextureAddressMode.Wrap, // Same as above, controls behavior at vertical edges
-    //};
-
-    //VertexBuffer vertexBuffer;
-    //IndexBuffer indexBuffer;
     BasicEffect effect;
-    //private IndexBuffer grassIndexBuffer;
-    //private VertexBuffer cobblestoneVertexBuffer;
-    //private IndexBuffer cobblestoneIndexBuffer;
-
     Chunk chunk;
-
-    #endregion
 
     public MineDirtGame()
     {
