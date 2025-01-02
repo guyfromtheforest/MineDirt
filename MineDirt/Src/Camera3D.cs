@@ -15,12 +15,15 @@ public class Camera3D
     private float yaw;
     private float pitch;
 
+    public float ViewDistance { get; set; } = 1000.0f;
+    public float FieldOfView { get; set; } = MathHelper.PiOver4;
+
     public static float MovementSpeed { get; set; } = 20.0f;
 
-    public Camera3D(Vector3 position, float aspectRatio, float fieldOfView = MathHelper.PiOver4, float nearPlane = 0.1f, float farPlane = 1000f)
+    public Camera3D(Vector3 position, float aspectRatio)
     {
         Position = position;
-        Projection = Matrix.CreatePerspectiveFieldOfView(fieldOfView, aspectRatio, nearPlane, farPlane);
+        Projection = Matrix.CreatePerspectiveFieldOfView(FieldOfView, aspectRatio, 0.1f, ViewDistance);
         UpdateViewMatrix();
     }
 

@@ -26,7 +26,9 @@ public class MineDirtGame : Game
     public static Noise Noise = new Noise(1234);
 
     BasicEffect effect;
-    Chunk chunk; 
+    
+    Chunk chunk;
+
     public MineDirtGame()
     {
         Graphics = new GraphicsDeviceManager(this);
@@ -77,8 +79,6 @@ public class MineDirtGame : Game
             Projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 0.1f, 100f)
         };
 
-        chunk = new(Vector3.Zero);
-
 #if DEBUG
         debug.LoadContent();
 #endif
@@ -96,6 +96,9 @@ public class MineDirtGame : Game
         Camera.Update(gameTime, keyboardState, mouseState, GraphicsDevice);
 
         IsMouseVisible = IsMouseCursorVisible;
+
+        World.UpdateChunks();
+        // chunk = new Chunk(new Vector3((float)Math.Floor(Camera.Position.X), 0, (float)Math.Floor(Camera.Position.Z)));
 
 #if DEBUG
         debug.Update(gameTime);
@@ -116,7 +119,8 @@ public class MineDirtGame : Game
         effect.View = Camera.View;
         effect.Projection = Camera.Projection;
 
-        chunk.Draw(effect);
+        World.DrawChunks(effect);
+        //chunk.Draw(effect);
 
         base.Draw(gameTime);
 

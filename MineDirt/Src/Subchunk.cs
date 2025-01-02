@@ -47,10 +47,15 @@ public class Subchunk
                         // Bedrock at the bottom layer
                         ChunkBlocks.Add(Blocks.Bedrock(blockPosition));
                     }
-                    else if (blockPosition.Y < maxHeight - 1)
+                    else if (blockPosition.Y < maxHeight - 10)
                     {
                         // Stone below the surface
                         ChunkBlocks.Add(Blocks.Stone(blockPosition));
+                    }
+                    else if (blockPosition.Y < maxHeight - 1)
+                    {
+                        // Dirt below the surface
+                        ChunkBlocks.Add(Blocks.Dirt(blockPosition));
                     }
                     else if (blockPosition.Y == maxHeight - 1)
                     {

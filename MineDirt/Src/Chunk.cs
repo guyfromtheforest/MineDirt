@@ -4,7 +4,7 @@ using MineDirt;
 using System.Collections.Generic;
 public class Chunk
 {
-    public static int Height { get; private set; } = 384; // Max chunk size
+    public static int Height { get; private set; } = 64; // Max chunk size
     public Vector3 Position { get; private set; }
 
     // List to store all subchunks
@@ -13,7 +13,7 @@ public class Chunk
     public Chunk(Vector3 position)
     {
         Position = position;
-        Subchunks = new List<Subchunk>();
+        Subchunks = [];
 
         // Generate subchunks
         GenerateSubchunks();
@@ -25,7 +25,7 @@ public class Chunk
 
         for (int y = 0; y < subchunkCount; y++)
         {
-            Vector3 subchunkPosition = Position + new Vector3(Position.X * Subchunk.Size, y * Subchunk.Size, Position.Z * Subchunk.Size);
+            Vector3 subchunkPosition = new(Position.X, y * Subchunk.Size, Position.Z);
 
             // Create and add the subchunk
             Subchunks.Add(new Subchunk(subchunkPosition));

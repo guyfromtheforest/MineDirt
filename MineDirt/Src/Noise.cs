@@ -8,7 +8,7 @@ public class Noise
     private readonly int seed;
     private readonly int[] permutation;
     private readonly int[] p;
-    private readonly float scale = 0.001f;
+    private readonly float scale = 0.01f;
 
     public Noise(int seed)
     {
