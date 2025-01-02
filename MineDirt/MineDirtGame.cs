@@ -142,7 +142,7 @@ public class MineDirtGame : Game
         }
 
         // Create an ImGui window for camera coordinates
-        if (ImGui.Begin("Camera Coordinates"))
+        if (ImGui.Begin("Debug"))
         {
             // Display the camera's position in the window
             ImGui.Text($"Camera Position: X: {camera.Position.X}, Y: {camera.Position.Y}, Z: {camera.Position.Z}");
