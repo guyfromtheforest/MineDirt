@@ -144,9 +144,11 @@ public class MineDirtGame : Game
         // Create an ImGui window for camera coordinates
         if (ImGui.Begin("Debug"))
         {
+            ImGui.SetWindowSize(new System.Numerics.Vector2(300, 100));
+
             // Display the camera's position in the window
-            ImGui.Text($"Camera Position: X: {camera.Position.X}, Y: {camera.Position.Y}, Z: {camera.Position.Z}");
-                    
+            ImGui.Text($"X: {camera.Position.X}, Y: {camera.Position.Y}, Z: {camera.Position.Z}");
+            
             // Display FPS and UPS
             ImGui.Text($"FPS: {fps}");
             ImGui.Text($"UPS: {ups}");
