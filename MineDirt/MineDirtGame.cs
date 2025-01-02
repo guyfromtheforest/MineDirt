@@ -1,12 +1,13 @@
-﻿using ImGuiNET;
+﻿#if DEBUG
+using MonoGame.ImGuiNet;
+#endif
+
+using ImGuiNET;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using System;
 using MineDirt.Src.Blocks;
-
-#if DEBUG
-using MonoGame.ImGuiNet;
-#endif
 
 namespace MineDirt;
 public class MineDirtGame : Game
@@ -22,9 +23,9 @@ public class MineDirtGame : Game
     BasicEffect effect;
     Chunk chunk;
 
-    private RasterizerState defaultRasterizeState = new ()
+    private RasterizerState defaultRasterizeState = new()
     {
-        FillMode = FillMode.Solid, 
+        FillMode = FillMode.Solid,
         CullMode = CullMode.None,
     };
 
@@ -52,6 +53,13 @@ public class MineDirtGame : Game
         Graphics = new GraphicsDeviceManager(this);
         Content.RootDirectory = "Content";
         IsMouseVisible = IsMouseCursorVisible;
+
+        // Uncap FPS
+        Graphics.SynchronizeWithVerticalRetrace = false;
+        IsFixedTimeStep = false;
+
+        // Set updates per second to 30
+        TargetElapsedTime = TimeSpan.FromSeconds(1.0 / 64.0);
 
         // Set to fullscreen
         Graphics.IsFullScreen = true;
@@ -134,7 +142,7 @@ public class MineDirtGame : Game
         GraphicsDevice.SamplerStates[0] = SamplerState.PointClamp;
         GraphicsDevice.DepthStencilState = DepthStencilState.Default;
 
-        if(RenderWireframes)
+        if (RenderWireframes)
             GraphicsDevice.RasterizerState = wireFrameRasterizeState;
 
         //// Set the effect matrices for the camera
@@ -161,11 +169,11 @@ public class MineDirtGame : Game
         // Create an ImGui window for camera coordinates
         if (ImGui.Begin("Debug"))
         {
-            ImGui.SetWindowSize(new System.Numerics.Vector2(300, 100));
+            ImGui.SetWindowSize(new System.Numerics.Vector2(320, 100));
 
             // Display the camera's position in the window
             ImGui.Text($"X: {camera.Position.X}, Y: {camera.Position.Y}, Z: {camera.Position.Z}");
-            
+
             // Display FPS and UPS
             ImGui.Text($"FPS: {fps}");
             ImGui.Text($"UPS: {ups}");
