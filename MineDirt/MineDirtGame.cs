@@ -14,7 +14,7 @@ public class MineDirtGame : Game
     public static GraphicsDeviceManager Graphics;
     private SpriteBatch _spriteBatch;
 
-    public static bool IsMouseCursorVisible = false; 
+    public static bool IsMouseCursorVisible = false;
 
     Camera3D camera;
     public static Texture2D BlockTextures;
@@ -24,6 +24,13 @@ public class MineDirtGame : Game
 
 #if DEBUG
     public static ImGuiRenderer GuiRenderer;
+
+    private float fps = 0f;
+    private float ups = 0f;
+    private float fpsTimer = 0f;
+    private float upsTimer = 0f;
+    private int frameCount = 0;
+    private int updateCount = 0;
 #endif
 
     public MineDirtGame()
@@ -46,7 +53,7 @@ public class MineDirtGame : Game
 #if DEBUG
         GuiRenderer = new ImGuiRenderer(this);
 #endif
-        
+
         camera = new Camera3D(new Vector3(0, 10, 0), GraphicsDevice.Viewport.AspectRatio);
 
         chunk = new(Vector3.Zero);
@@ -89,6 +96,20 @@ public class MineDirtGame : Game
         IsMouseVisible = IsMouseCursorVisible;
 
         base.Update(gameTime);
+
+#if DEBUG
+        float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
+
+        // Update UPS (Updates Per Second)
+        upsTimer += deltaTime;
+        updateCount++;
+        if (upsTimer >= 1f) // Update every second
+        {
+            ups = updateCount;
+            upsTimer -= 1f;  // Reset the timer
+            updateCount = 0;
+        }
+#endif
     }
 
     protected override void Draw(GameTime gameTime)
@@ -110,15 +131,25 @@ public class MineDirtGame : Game
 #if DEBUG
         GuiRenderer.BeginLayout(gameTime);
 
+        // Calculate FPS (Frames Per Second)
+        fpsTimer += (float)gameTime.ElapsedGameTime.TotalSeconds;
+        frameCount++;
+        if (fpsTimer >= 1f) // Update every second
+        {
+            fps = frameCount;
+            fpsTimer -= 1f; // Reset the timer
+            frameCount = 0;
+        }
+
         // Create an ImGui window for camera coordinates
         if (ImGui.Begin("Camera Coordinates"))
         {
             // Display the camera's position in the window
             ImGui.Text($"Camera Position: X: {camera.Position.X}, Y: {camera.Position.Y}, Z: {camera.Position.Z}");
-
-            // Optionally, display other camera parameters (e.g., rotation or view matrix)
-            // ImGui.Text($"Camera Rotation: {camera.Rotation}");
-            // ImGui.Text($"View Matrix: {camera.View}");
+                    
+            // Display FPS and UPS
+            ImGui.Text($"FPS: {fps}");
+            ImGui.Text($"UPS: {ups}");
         }
         ImGui.End();
 
