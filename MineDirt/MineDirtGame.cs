@@ -25,16 +25,6 @@ public class MineDirtGame : Game
     BasicEffect effect;
     Chunk chunk;
 
-    private const int TargetUPS = 30;        // Updates per second
-    private const int TargetFPS = 0;         // Frames per second (0 for uncapped)
-    private double UpdateInterval => 1.0 / TargetUPS;
-    private double FrameInterval => TargetFPS > 0 ? 1.0 / TargetFPS : 0.0;
-
-    private double elapsedUpdateTime = 0;
-    private double elapsedFrameTime = 0;
-
-    private Stopwatch stopwatch = new Stopwatch();
-
     public MineDirtGame()
     {
         Graphics = new GraphicsDeviceManager(this);
@@ -106,7 +96,6 @@ public class MineDirtGame : Game
 
         IsMouseVisible = IsMouseCursorVisible;
 
-
 #if DEBUG
         debug.Update(gameTime);
 #endif
@@ -123,7 +112,6 @@ public class MineDirtGame : Game
         GraphicsDevice.SamplerStates[0] = SamplerState.PointClamp;
         GraphicsDevice.DepthStencilState = DepthStencilState.Default;
 
-        //// Set the effect matrices for the camera
         effect.View = Camera.View;
         effect.Projection = Camera.Projection;
 

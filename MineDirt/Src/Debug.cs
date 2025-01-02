@@ -89,7 +89,6 @@ public class Debug
         GuiRenderer.EndLayout();
     }
 
-
     public void BeginDraw(GameTime gameTime)
     {
         if (RenderWireframes)
