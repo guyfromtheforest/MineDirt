@@ -3,8 +3,8 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
-using MineDirt.Src.Blocks;
 using System.Diagnostics;
+using System.Collections.Generic;
 
 namespace MineDirt;
 public class MineDirtGame : Game
@@ -23,8 +23,7 @@ public class MineDirtGame : Game
     private SpriteBatch _spriteBatch;
 
     BasicEffect effect;
-    Chunk chunk;
-
+    Chunk chunk; 
     public MineDirtGame()
     {
         Graphics = new GraphicsDeviceManager(this);
@@ -53,9 +52,6 @@ public class MineDirtGame : Game
     {
         Camera = new Camera3D(new Vector3(0, 10, 0), GraphicsDevice.Viewport.AspectRatio);
 
-        chunk = new(Vector3.Zero);
-
-
 #if DEBUG
         debug.Initialize();
 #endif
@@ -77,6 +73,8 @@ public class MineDirtGame : Game
             View = Matrix.CreateLookAt(new Vector3(0, 0, 0), Vector3.Zero, Vector3.Up),
             Projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 0.1f, 100f)
         };
+
+        chunk = new(Vector3.Zero);
 
 #if DEBUG
         debug.LoadContent();

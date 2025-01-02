@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MineDirt.Src.Blocks;
+namespace MineDirt.Src;
 public class Block
 {
     public short[] Indices => indices;
@@ -29,19 +29,59 @@ public class Block
 
     public VertexPositionTexture[] Vertices;
 
+    // [0] = Front, Back, Left, Right, Top, Bottom
+    // [0] = Front, Back, Left, Right, [1] = Top, Bottom
+    // [0] = Front, Back, Left, Right, [1] = Top, [2] = Bottom
+    // [0] = Front, [1] = Back, [2] = Left, [3] = Right, [4] = Top, [5] = Bottom]
     public Block(Vector3 pos, short[] textureAtlasIndices)
     {
-        // Get texture coordinates for each face (front, back, left, right, top, bottom)
-        Vector2[][] textures =
-        [
-            GetTextureCoordinates(textureAtlasIndices[0]), // Front face
-            GetTextureCoordinates(textureAtlasIndices[1]), // Back face
-            GetTextureCoordinates(textureAtlasIndices[2]), // Left face
-            GetTextureCoordinates(textureAtlasIndices[3]), // Right face
-            GetTextureCoordinates(textureAtlasIndices[4]), // Top face
-            GetTextureCoordinates(textureAtlasIndices[5])  // Bottom face
-        ];
+        Vector2[][] textures = []; 
 
+        // Get texture coordinates for each face (front, back, left, right, top, bottom)
+        if(textureAtlasIndices.Length == 1)
+            textures =
+            [
+                GetTextureCoordinates(textureAtlasIndices[0]), // Front face
+                GetTextureCoordinates(textureAtlasIndices[0]), // Back face
+                GetTextureCoordinates(textureAtlasIndices[0]), // Left face
+                GetTextureCoordinates(textureAtlasIndices[0]), // Right face
+                GetTextureCoordinates(textureAtlasIndices[0]), // Top face
+                GetTextureCoordinates(textureAtlasIndices[0])  // Bottom face
+            ];
+
+        if(textureAtlasIndices.Length == 2)
+            textures =
+            [
+                GetTextureCoordinates(textureAtlasIndices[0]), // Front face
+                GetTextureCoordinates(textureAtlasIndices[0]), // Back face
+                GetTextureCoordinates(textureAtlasIndices[0]), // Left face
+                GetTextureCoordinates(textureAtlasIndices[0]), // Right face
+                GetTextureCoordinates(textureAtlasIndices[1]), // Top face
+                GetTextureCoordinates(textureAtlasIndices[1])  // Bottom face
+            ];
+
+        if(textureAtlasIndices.Length == 3)
+            textures =
+            [
+                GetTextureCoordinates(textureAtlasIndices[0]), // Front face
+                GetTextureCoordinates(textureAtlasIndices[0]), // Back face
+                GetTextureCoordinates(textureAtlasIndices[0]), // Left face
+                GetTextureCoordinates(textureAtlasIndices[0]), // Right face
+                GetTextureCoordinates(textureAtlasIndices[1]), // Top face
+                GetTextureCoordinates(textureAtlasIndices[2])  // Bottom face
+            ];
+
+        if(textureAtlasIndices.Length == 6)
+            textures =
+            [
+                GetTextureCoordinates(textureAtlasIndices[0]), // Front face
+                GetTextureCoordinates(textureAtlasIndices[1]), // Back face
+                GetTextureCoordinates(textureAtlasIndices[2]), // Left face
+                GetTextureCoordinates(textureAtlasIndices[3]), // Right face
+                GetTextureCoordinates(textureAtlasIndices[4]), // Top face
+                GetTextureCoordinates(textureAtlasIndices[5])  // Bottom face
+            ];
+        
         // Define the vertices with texture coordinates (UV mapping)
         Vertices =
         [
