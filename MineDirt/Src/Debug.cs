@@ -19,7 +19,7 @@ public class Debug
     private int frameCount = 0;
     private int updateCount = 0;
 
-    private float cameraSpeed = 15f;
+    private float cameraSpeed = Camera3D.MovementSpeed;
 
     private bool RenderWireframes = false;
 

@@ -15,7 +15,7 @@ public class Camera3D
     private float yaw;
     private float pitch;
 
-    public static float MovementSpeed { get; set; } = 15.0f;
+    public static float MovementSpeed { get; set; } = 20.0f;
 
     public Camera3D(Vector3 position, float aspectRatio, float fieldOfView = MathHelper.PiOver4, float nearPlane = 0.1f, float farPlane = 100f)
     {
