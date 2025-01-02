@@ -29,12 +29,12 @@ public class Chunk
     private void GenerateBlocks()
     {
         for (int x = 0; x < Size; x++)
-            for (int y = 0; y < Size; y++)
+            for (int y = 0; -y < Size; y--)
                 for (int z = 0; z < Size; z++)
                 {
                     // Create a block at each position in the chunk
                     Vector3 blockPosition = Position + new Vector3(x, y, z);
-                    if(y == 15)
+                    if(y == 0)
                         Blocks.Add(new GrassBlock(blockPosition));
                     else
                         Blocks.Add(new Cobblestone(blockPosition));

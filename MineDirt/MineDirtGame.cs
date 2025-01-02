@@ -52,9 +52,9 @@ public class MineDirtGame : Game
     {
         // TODO: Add your initialization logic here
         IsMouseVisible = false; // Hide the mouse cursor
-        camera = new Camera3D(new Vector3(0, 0, 5), GraphicsDevice.Viewport.AspectRatio);
+        camera = new Camera3D(new Vector3(0, 10, 0), GraphicsDevice.Viewport.AspectRatio);
 
-         chunk = new(Vector3.Zero);
+        chunk = new(Vector3.Zero);
 
         base.Initialize();
     }
