@@ -27,7 +27,7 @@ public class Camera3D
 
         // Movement and rotation speeds
         float rotationSpeed = 0.005f; // Smaller values for finer control
-        float movementSpeed = 5.0f;
+        float movementSpeed = 15.0f;
 
         // Center of the screen
         int centerX = graphicsDevice.Viewport.Width / 2;
@@ -52,6 +52,10 @@ public class Camera3D
         Forward = Vector3.Transform(Vector3.Forward, rotationMatrix);
         Vector3 right = Vector3.Cross(Forward, Up);
 
+        // Normalize the movement vectors to prevent faster movement when moving diagonally
+        Forward = Vector3.Normalize(Forward);
+        right = Vector3.Normalize(right);
+
         // Movement with keyboard
         if (keyboardState.IsKeyDown(Keys.W))
             Position += Forward * movementSpeed * deltaTime;
@@ -69,6 +73,7 @@ public class Camera3D
         // Update the view matrix
         UpdateViewMatrix();
     }
+
 
     private void UpdateViewMatrix()
     {
