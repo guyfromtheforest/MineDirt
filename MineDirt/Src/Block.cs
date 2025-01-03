@@ -11,23 +11,8 @@ public class Block
 {
     public BlockType BlockType { get; private set; }
 
-    public static byte[] indices =
-    [
-        // Front face
-        0, 1, 2, 2, 1, 3,
-        // Back face
-        0, 1, 2, 2, 1, 3,
-        // Left face
-        0, 1, 2, 2, 1, 3,
-        // Right face
-        0, 1, 2, 2, 1, 3,
-        // Top face
-        0, 1, 2, 2, 1, 3,
-        // Bottom face
-        0, 1, 2, 2, 1, 3
-    ];
-
     public static Dictionary<BlockType, Vector2[][]> textures = [];
+    public static byte[] Indices = [0, 1, 2, 2, 1, 3];
 
     public static VertexPositionTexture[] Vertices(Vector3 pos, BlockType blockType) => [
             // Front face (using the side texture)
@@ -151,10 +136,4 @@ public class Block
         return Vertices(pos, BlockType).Skip(faceIndex * 4).Take(4).ToArray();
     }
 
-    public byte[] GetFaceIndices(int faceIndex)
-    {
-        // Each face has 6 indices in the Indices array
-        // Face indices: 0 = Front, 1 = Back, 2 = Left, 3 = Right, 4 = Top, 5 = Bottom
-        return indices.Skip(faceIndex * 6).Take(6).ToArray();
-    }
 }

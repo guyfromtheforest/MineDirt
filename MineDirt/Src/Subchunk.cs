@@ -117,16 +117,15 @@ public class Subchunk
                 {
                     // Add the vertices and indices for this face
                     var faceVertices = block.Value.GetFaceVertices(faceIndex, block.Key);
-                    var faceIndices = block.Value.GetFaceIndices(faceIndex);
 
                     for (int i = 0; i < faceVertices.Length; i++)
                         allVertices[vertexOffset + i] = faceVertices[i];
 
-                    for (int i = 0; i < faceIndices.Length; i++)
-                        allIndices[indexOffset + i] = faceIndices[i] + vertexOffset;
+                    for (int i = 0; i < Block.Indices.Length; i++)
+                        allIndices[indexOffset + i] = Block.Indices[i] + vertexOffset;
 
                     vertexOffset += faceVertices.Length;
-                    indexOffset += faceIndices.Length;
+                    indexOffset += Block.Indices.Length;
                 }
             }
         }
