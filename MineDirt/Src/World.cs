@@ -9,7 +9,7 @@ namespace MineDirt.Src;
 public static class World
 {
     public static List<Chunk> Chunks = [];
-    public static short RenderDistance { get; private set; } = 8;
+    public static short RenderDistance { get; private set; } = 16;
 
     public static void UpdateChunks()
     {

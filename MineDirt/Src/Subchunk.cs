@@ -109,15 +109,15 @@ public class Subchunk
         int vertexOffset = 0;
         int indexOffset = 0;
 
-        foreach (var block in ChunkBlocks.Values)
+        foreach (var block in ChunkBlocks)
         {
             for (int faceIndex = 0; faceIndex < 6; faceIndex++)
             {
-                if (IsFaceVisible(block.Position, faceDirections[faceIndex]))
+                if (IsFaceVisible(block.Key, faceDirections[faceIndex]))
                 {
                     // Add the vertices and indices for this face
-                    var faceVertices = block.GetFaceVertices(faceIndex);
-                    var faceIndices = block.GetFaceIndices(faceIndex);
+                    var faceVertices = block.Value.GetFaceVertices(faceIndex, block.Key);
+                    var faceIndices = block.Value.GetFaceIndices(faceIndex);
 
                     for (int i = 0; i < faceVertices.Length; i++)
                         allVertices[vertexOffset + i] = faceVertices[i];
@@ -132,6 +132,9 @@ public class Subchunk
         }
 
         // Create the buffers
+        if(allVertices.Length == 0 || allIndices.Length == 0)
+            return;
+
         VertexBuffer = new VertexBuffer(MineDirtGame.Graphics.GraphicsDevice, typeof(VertexPositionTexture), allVertices.Length, BufferUsage.WriteOnly);
         VertexBuffer.SetData(allVertices);
 

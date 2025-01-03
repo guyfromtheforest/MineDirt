@@ -9,9 +9,7 @@ using System.Threading.Tasks;
 namespace MineDirt.Src;
 public class Block
 {
-    public byte[] Indices => indices;
     public BlockType BlockType { get; private set; }
-    public Vector3 Position { get; private set; }
 
     //public static byte[] indices =
     //[
@@ -28,6 +26,7 @@ public class Block
     //    // Bottom face
     //    20, 21, 22, 22, 21, 23
     //];
+
     public static byte[] indices =
     [
         // Front face
@@ -46,16 +45,51 @@ public class Block
 
     public static Dictionary<BlockType, Vector2[][]> textures = [];
 
-    public VertexPositionTexture[] Vertices;
+    public static VertexPositionTexture[] Vertices(Vector3 pos, BlockType blockType) => [
+            // Front face (using the side texture)
+            new VertexPositionTexture(new Vector3(pos.X - 0.5f, pos.Y + 0.5f, pos.Z - 0.5f), textures[blockType][0][0]), // top-left
+            new VertexPositionTexture(new Vector3(pos.X + 0.5f, pos.Y + 0.5f, pos.Z - 0.5f), textures[blockType][0][1]),  // top-right
+            new VertexPositionTexture(new Vector3(pos.X - 0.5f, pos.Y - 0.5f, pos.Z - 0.5f), textures[blockType][0][2]), // bottom-left
+            new VertexPositionTexture(new Vector3(pos.X + 0.5f, pos.Y - 0.5f, pos.Z - 0.5f), textures[blockType][0][3]),  // bottom-right
+
+            // Back face (using the side texture)
+            new VertexPositionTexture(new Vector3(pos.X - 0.5f, pos.Y + 0.5f, pos.Z + 0.5f), textures[blockType][1][0]),  // top-left
+            new VertexPositionTexture(new Vector3(pos.X + 0.5f, pos.Y + 0.5f, pos.Z + 0.5f), textures[blockType][1][1]),   // top-right
+            new VertexPositionTexture(new Vector3(pos.X - 0.5f, pos.Y - 0.5f, pos.Z + 0.5f), textures[blockType][1][2]),  // bottom-left
+            new VertexPositionTexture(new Vector3(pos.X + 0.5f, pos.Y - 0.5f, pos.Z + 0.5f), textures[blockType][1][3]),   // bottom-right
+
+            // Left face (using the side texture)
+            new VertexPositionTexture(new Vector3(pos.X - 0.5f, pos.Y + 0.5f, pos.Z - 0.5f), textures[blockType][2][0]),  // top-left
+            new VertexPositionTexture(new Vector3(pos.X - 0.5f, pos.Y + 0.5f, pos.Z + 0.5f), textures[blockType][2][1]),   // top-right
+            new VertexPositionTexture(new Vector3(pos.X - 0.5f, pos.Y - 0.5f, pos.Z - 0.5f), textures[blockType][2][2]),  // bottom-left
+            new VertexPositionTexture(new Vector3(pos.X - 0.5f, pos.Y - 0.5f, pos.Z + 0.5f), textures[blockType][2][3]),   // bottom-right
+
+            // Right face (using the side texture)
+            new VertexPositionTexture(new Vector3(pos.X + 0.5f, pos.Y + 0.5f, pos.Z - 0.5f), textures[blockType][3][0]),  // top-left
+            new VertexPositionTexture(new Vector3(pos.X + 0.5f, pos.Y + 0.5f, pos.Z + 0.5f), textures[blockType][3][1]),   // top-right
+            new VertexPositionTexture(new Vector3(pos.X + 0.5f, pos.Y - 0.5f, pos.Z - 0.5f), textures[blockType][3][2]),  // bottom-left
+            new VertexPositionTexture(new Vector3(pos.X + 0.5f, pos.Y - 0.5f, pos.Z + 0.5f), textures[blockType][3][3]),   // bottom-right
+
+            // Top face (using the top texture)
+            new VertexPositionTexture(new Vector3(pos.X - 0.5f, pos.Y + 0.5f, pos.Z - 0.5f), textures[blockType][4][0]),  // top-left
+            new VertexPositionTexture(new Vector3(pos.X + 0.5f, pos.Y + 0.5f, pos.Z - 0.5f), textures[blockType][4][1]),   // top-right
+            new VertexPositionTexture(new Vector3(pos.X - 0.5f, pos.Y + 0.5f, pos.Z + 0.5f), textures[blockType][4][2]),   // bottom-left
+            new VertexPositionTexture(new Vector3(pos.X + 0.5f, pos.Y + 0.5f, pos.Z + 0.5f), textures[blockType][4][3]),    // bottom-right
+
+            // Bottom face (using the bottom texture)
+            new VertexPositionTexture(new Vector3(pos.X - 0.5f, pos.Y - 0.5f, pos.Z - 0.5f), textures[blockType][5][0]), // top-left
+            new VertexPositionTexture(new Vector3(pos.X + 0.5f, pos.Y - 0.5f, pos.Z - 0.5f), textures[blockType][5][1]),  // top-right
+            new VertexPositionTexture(new Vector3(pos.X - 0.5f, pos.Y - 0.5f, pos.Z + 0.5f), textures[blockType][5][2]),  // bottom-left
+            new VertexPositionTexture(new Vector3(pos.X + 0.5f, pos.Y - 0.5f, pos.Z + 0.5f), textures[blockType][5][3])    // bottom-right
+        ];
 
     // [0] = Front, Back, Left, Right, Top, Bottom
     // [0] = Front, Back, Left, Right, [1] = Top, Bottom
     // [0] = Front, Back, Left, Right, [1] = Top, [2] = Bottom
     // [0] = Front, [1] = Back, [2] = Left, [3] = Right, [4] = Top, [5] = Bottom]
-    public Block(BlockType blockType, byte[] textureAtlasIndices, Vector3 pos)
+    public Block(BlockType blockType, byte[] textureAtlasIndices)
     {
         BlockType = blockType;
-        Position = pos;
 
         if (!textures.ContainsKey(blockType))
         {
@@ -104,44 +138,6 @@ public class Block
                     GetTextureCoordinates(textureAtlasIndices[5])  // Bottom face
                 ]);
         }
-
-        Vertices = [
-            // Front face (using the side texture)
-            new VertexPositionTexture(new Vector3(Position.X - 0.5f, Position.Y + 0.5f, Position.Z - 0.5f), textures[BlockType][0][0]), // top-left
-            new VertexPositionTexture(new Vector3(Position.X + 0.5f, Position.Y + 0.5f, Position.Z - 0.5f), textures[BlockType][0][1]),  // top-right
-            new VertexPositionTexture(new Vector3(Position.X - 0.5f, Position.Y - 0.5f, Position.Z - 0.5f), textures[BlockType][0][2]), // bottom-left
-            new VertexPositionTexture(new Vector3(Position.X + 0.5f, Position.Y - 0.5f, Position.Z - 0.5f), textures[BlockType][0][3]),  // bottom-right
-
-            // Back face (using the side texture)
-            new VertexPositionTexture(new Vector3(Position.X - 0.5f, Position.Y + 0.5f, Position.Z + 0.5f), textures[BlockType][1][0]),  // top-left
-            new VertexPositionTexture(new Vector3(Position.X + 0.5f, Position.Y + 0.5f, Position.Z + 0.5f), textures[BlockType][1][1]),   // top-right
-            new VertexPositionTexture(new Vector3(Position.X - 0.5f, Position.Y - 0.5f, Position.Z + 0.5f), textures[BlockType][1][2]),  // bottom-left
-            new VertexPositionTexture(new Vector3(Position.X + 0.5f, Position.Y - 0.5f, Position.Z + 0.5f), textures[BlockType][1][3]),   // bottom-right
-
-            // Left face (using the side texture)
-            new VertexPositionTexture(new Vector3(Position.X - 0.5f, Position.Y + 0.5f, Position.Z - 0.5f), textures[BlockType][2][0]),  // top-left
-            new VertexPositionTexture(new Vector3(Position.X - 0.5f, Position.Y + 0.5f, Position.Z + 0.5f), textures[BlockType][2][1]),   // top-right
-            new VertexPositionTexture(new Vector3(Position.X - 0.5f, Position.Y - 0.5f, Position.Z - 0.5f), textures[BlockType][2][2]),  // bottom-left
-            new VertexPositionTexture(new Vector3(Position.X - 0.5f, Position.Y - 0.5f, Position.Z + 0.5f), textures[BlockType][2][3]),   // bottom-right
-
-            // Right face (using the side texture)
-            new VertexPositionTexture(new Vector3(Position.X + 0.5f, Position.Y + 0.5f, Position.Z - 0.5f), textures[BlockType][3][0]),  // top-left
-            new VertexPositionTexture(new Vector3(Position.X + 0.5f, Position.Y + 0.5f, Position.Z + 0.5f), textures[BlockType][3][1]),   // top-right
-            new VertexPositionTexture(new Vector3(Position.X + 0.5f, Position.Y - 0.5f, Position.Z - 0.5f), textures[BlockType][3][2]),  // bottom-left
-            new VertexPositionTexture(new Vector3(Position.X + 0.5f, Position.Y - 0.5f, Position.Z + 0.5f), textures[BlockType][3][3]),   // bottom-right
-
-            // Top face (using the top texture)
-            new VertexPositionTexture(new Vector3(Position.X - 0.5f, Position.Y + 0.5f, Position.Z - 0.5f), textures[BlockType][4][0]),  // top-left
-            new VertexPositionTexture(new Vector3(Position.X + 0.5f, Position.Y + 0.5f, Position.Z - 0.5f), textures[BlockType][4][1]),   // top-right
-            new VertexPositionTexture(new Vector3(Position.X - 0.5f, Position.Y + 0.5f, Position.Z + 0.5f), textures[BlockType][4][2]),   // bottom-left
-            new VertexPositionTexture(new Vector3(Position.X + 0.5f, Position.Y + 0.5f, Position.Z + 0.5f), textures[BlockType][4][3]),    // bottom-right
-
-            // Bottom face (using the bottom texture)
-            new VertexPositionTexture(new Vector3(Position.X - 0.5f, Position.Y - 0.5f, Position.Z - 0.5f), textures[BlockType][5][0]), // top-left
-            new VertexPositionTexture(new Vector3(Position.X + 0.5f, Position.Y - 0.5f, Position.Z - 0.5f), textures[BlockType][5][1]),  // top-right
-            new VertexPositionTexture(new Vector3(Position.X - 0.5f, Position.Y - 0.5f, Position.Z + 0.5f), textures[BlockType][5][2]),  // bottom-left
-            new VertexPositionTexture(new Vector3(Position.X + 0.5f, Position.Y - 0.5f, Position.Z + 0.5f), textures[BlockType][5][3])    // bottom-right
-        ];
     }
 
     public static Vector2[] GetTextureCoordinates(int textureIndex, int textureWidth = 16, int textureHeight = 16, int atlasWidth = 256)
@@ -164,17 +160,17 @@ public class Block
         ];
     }
 
-    public VertexPositionTexture[] GetFaceVertices(int faceIndex)
+    public VertexPositionTexture[] GetFaceVertices(int faceIndex, Vector3 pos)
     {
         // Each face has 4 vertices in the VertexPositionTexture array
         // Face indices: 0 = Front, 1 = Back, 2 = Left, 3 = Right, 4 = Top, 5 = Bottom
-        return Vertices.Skip(faceIndex * 4).Take(4).ToArray();
+        return Vertices(pos, BlockType).Skip(faceIndex * 4).Take(4).ToArray();
     }
 
     public byte[] GetFaceIndices(int faceIndex)
     {
         // Each face has 6 indices in the Indices array
         // Face indices: 0 = Front, 1 = Back, 2 = Left, 3 = Right, 4 = Top, 5 = Bottom
-        return Indices.Skip(faceIndex * 6).Take(6).ToArray();
+        return indices.Skip(faceIndex * 6).Take(6).ToArray();
     }
 }
