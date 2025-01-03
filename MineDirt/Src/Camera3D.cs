@@ -27,7 +27,7 @@ public class Camera3D
         UpdateViewMatrix();
     }
 
-    private bool wasPKeyDown = false; // To debounce the P key press
+    private bool wasMenuMode = false; // To debounce the P key press
     private bool isMouseControlEnabled = true; // Flag to track if mouse control is enabled
     private bool isMouseCentered = true; // Flag to check if the mouse is centered
 
@@ -47,10 +47,10 @@ public void Update(GameTime gameTime, KeyboardState keyboardState, MouseState mo
         isMouseCentered = true;  
 
     // Toggle camera mode with the 'P' key
-    if (keyboardState.IsKeyDown(Keys.P) && !wasPKeyDown)  // Debounced press of 'P' key
+    if (mouseState.RightButton == ButtonState.Pressed && !wasMenuMode)  // Debounced press of 'P' key
     {
         isMouseControlEnabled = !isMouseControlEnabled; // Toggle mouse control
-        wasPKeyDown = true;
+        wasMenuMode = true;
 
         if (!isMouseControlEnabled)
         {
@@ -72,8 +72,8 @@ public void Update(GameTime gameTime, KeyboardState keyboardState, MouseState mo
     }
 
     // Flag to handle debouncing key press (avoids rapid toggling)
-    if (keyboardState.IsKeyUp(Keys.P))
-        wasPKeyDown = false;
+    if (mouseState.RightButton == ButtonState.Released)
+        wasMenuMode = false;
 
     // Camera follows the mouse if it's enabled
     if (isMouseControlEnabled)

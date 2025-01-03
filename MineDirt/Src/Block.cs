@@ -11,28 +11,12 @@ public class Block
 {
     public BlockType BlockType { get; private set; }
 
-    //public static byte[] indices =
-    //[
-    //    // Front face
-    //    0, 1, 2, 2, 1, 3,
-    //    // Back face
-    //    4, 6, 5, 5, 6, 7,
-    //    // Left face
-    //    8, 9, 10, 10, 9, 11,
-    //    // Right face
-    //    12, 13, 14, 14, 13, 15,
-    //    // Top face
-    //    16, 17, 18, 18, 17, 19,
-    //    // Bottom face
-    //    20, 21, 22, 22, 21, 23
-    //];
-
     public static byte[] indices =
     [
         // Front face
         0, 1, 2, 2, 1, 3,
         // Back face
-        0, 2, 1, 1, 2, 3,
+        0, 1, 2, 2, 1, 3,
         // Left face
         0, 1, 2, 2, 1, 3,
         // Right face
