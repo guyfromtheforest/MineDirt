@@ -26,6 +26,7 @@ public class Debug
     private RasterizerState wireFrameRasterizeState = new()
     {
         FillMode = FillMode.WireFrame,
+        CullMode = CullMode.None,
     };
 
     private RasterizerState defaultRasterizeState = new()

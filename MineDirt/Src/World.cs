@@ -34,7 +34,7 @@ public static class World
 
                 Vector3 chunkCenter = chunkPosition + new Vector3(chunkSize / 2, 0, chunkSize / 2);
                 float distanceSquared = Vector3.DistanceSquared(
-                    new Vector3(cameraPosition.X, 0, cameraPosition.Z ),
+                    new Vector3(cameraPosition.X, 0, cameraPosition.Z),
                     chunkCenter
                 );
 
@@ -61,6 +61,11 @@ public static class World
             }
             return false;
         });
+
+        //if (!Chunks.Any(chunk => chunk.Position == Vector3.Zero))
+        //{
+        //    Chunks.Add(new Chunk(Vector3.Zero));
+        //}
     }
 
 

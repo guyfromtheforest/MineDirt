@@ -12,11 +12,21 @@ public class Subchunk
     public Vector3 Position { get; private set; }
 
     // List to store all blocks in the chunk
-    public List<Block> ChunkBlocks { get; private set; }
+    public Dictionary<Vector3, Block> ChunkBlocks { get; private set; }
 
     // Vertex and Index Buffers for the entire chunk
     public VertexBuffer VertexBuffer { get; private set; }
     public IndexBuffer IndexBuffer { get; private set; }
+
+    static Vector3[] faceDirections =
+    [
+        new Vector3(0, 0, -1), // Front
+        new Vector3(0, 0, 1),  // Back
+        new Vector3(-1, 0, 0), // Left
+        new Vector3(1, 0, 0),  // Right
+        new Vector3(0, 1, 0),  // Top
+        new Vector3(0, -1, 0), // Bottom
+    ];
 
     public Subchunk(Vector3 position)
     {
@@ -44,22 +54,22 @@ public class Subchunk
                     if (blockPosition.Y == 0)
                     {
                         // Bedrock at the bottom layer
-                        ChunkBlocks.Add(Blocks.Bedrock(blockPosition));
+                        ChunkBlocks.Add(blockPosition, Blocks.Bedrock(blockPosition));
                     }
                     else if (blockPosition.Y < maxHeight - 10)
                     {
                         // Stone below the surface
-                        ChunkBlocks.Add(Blocks.Stone(blockPosition));
+                        ChunkBlocks.Add(blockPosition, Blocks.Stone(blockPosition));
                     }
                     else if (blockPosition.Y < maxHeight - 1)
                     {
                         // Dirt below the surface
-                        ChunkBlocks.Add(Blocks.Dirt(blockPosition));
+                        ChunkBlocks.Add(blockPosition, Blocks.Dirt(blockPosition));
                     }
                     else if (blockPosition.Y == maxHeight - 1)
                     {
                         // Grass on the surface
-                        ChunkBlocks.Add(Blocks.Grass(blockPosition));
+                        ChunkBlocks.Add(blockPosition, Blocks.Grass(blockPosition));
                     }
                     else
                     {
@@ -69,12 +79,24 @@ public class Subchunk
                 }
             }
         }
+
+        //int l = 1;
+        //for (int i = 0; i < l; i++)
+        //{
+        //    for (int j = 0; j < l; j++)
+        //    {
+        //        for (int k = 0; k < l; k++)
+        //        {
+        //            ChunkBlocks.Add(new Vector3(i, j, k), Blocks.Stone(new Vector3(i, j, k)));
+        //        }
+        //    }
+        //}
     }
 
     private void CreateBuffers()
     {
-        if(ChunkBlocks.Count == 0)
-            return; 
+        if (ChunkBlocks.Count == 0)
+            return;
 
         // Calculate total number of vertices and indices needed for the chunk
         int totalVertices = ChunkBlocks.Count * 24;  // 24 vertices per block (6 faces, 4 vertices per face)
@@ -87,18 +109,26 @@ public class Subchunk
         int vertexOffset = 0;
         int indexOffset = 0;
 
-        // Fill the vertex and index arrays for each block
-        foreach (var block in ChunkBlocks)
+        foreach (var block in ChunkBlocks.Values)
         {
-            // Add block's vertices and indices to the arrays
-            for (int i = 0; i < block.Vertices.Length; i++)
-                allVertices[vertexOffset + i] = block.Vertices[i];
+            for (int faceIndex = 0; faceIndex < 6; faceIndex++)
+            {
+                if (IsFaceVisible(block.Position, faceDirections[faceIndex]))
+                {
+                    // Add the vertices and indices for this face
+                    var faceVertices = block.GetFaceVertices(faceIndex);
+                    var faceIndices = block.GetFaceIndices(faceIndex);
 
-            for (int i = 0; i < block.Indices.Length; i++)
-                allIndices[indexOffset + i] = (block.Indices[i] + vertexOffset);  // Adjust index for global vertex offset
+                    for (int i = 0; i < faceVertices.Length; i++)
+                        allVertices[vertexOffset + i] = faceVertices[i];
 
-            vertexOffset += block.Vertices.Length;
-            indexOffset += block.Indices.Length;
+                    for (int i = 0; i < faceIndices.Length; i++)
+                        allIndices[indexOffset + i] = faceIndices[i] + vertexOffset;
+
+                    vertexOffset += faceVertices.Length;
+                    indexOffset += faceIndices.Length;
+                }
+            }
         }
 
         // Create the buffers
@@ -109,9 +139,18 @@ public class Subchunk
         IndexBuffer.SetData(allIndices);
     }
 
+    bool IsFaceVisible(Vector3 blockPosition, Vector3 direction)
+    {
+        Vector3 neighborPosition = blockPosition + direction;
+        if (ChunkBlocks.TryGetValue(neighborPosition, out var neighborBlock))
+            return false;
+
+        return true;
+    }
+
     public void Draw(BasicEffect effect)
     {
-        if(ChunkBlocks.Count == 0)
+        if (ChunkBlocks.Count == 0)
             return;
 
         // Set the texture for the chunk
