@@ -30,7 +30,6 @@ public class Subchunk
 
     private void GenerateBlocks()
     {
-
         for (int x = 0; x < Size; x++)
         {
             for (int z = 0; z < Size; z++)
