@@ -8,7 +8,7 @@ using System.Text;
 namespace MineDirt.Src;
 public static class World
 {
-    public static List<Chunk> VisibleChunks = [];
+    public static List<Chunk> Chunks = [];
     public static short RenderDistance { get; private set; } = 8;
 
     public static void UpdateChunks()
@@ -44,16 +44,16 @@ public static class World
                     chunksToKeep.Add(chunkPosition);
 
                     // Add new chunk if it doesn't already exist
-                    if (!VisibleChunks.Any(chunk => chunk.Position == chunkPosition))
+                    if (!Chunks.Any(chunk => chunk.Position == chunkPosition))
                     {
-                        VisibleChunks.Add(new Chunk(chunkPosition));
+                        Chunks.Add(new Chunk(chunkPosition));
                     }
                 }
             }
         }
 
         // Remove chunks outside the render distance
-        VisibleChunks.RemoveAll(chunk =>
+        Chunks.RemoveAll(chunk =>
         {
             if (!chunksToKeep.Contains(chunk.Position))
             {
@@ -66,7 +66,23 @@ public static class World
 
     public static void DrawChunks(BasicEffect effect)
     {
-        for (int i = 0; i < VisibleChunks.Count; i++)
-            VisibleChunks[i].Draw(effect);
+        // Get the camera's frustum
+        BoundingFrustum frustum = new(effect.View * effect.Projection);
+
+        for (int i = 0; i < Chunks.Count; i++)
+        {
+            // Create a bounding box for the subchunk
+            BoundingBox subchunkBoundingBox = new(
+                Chunks[i].Position - new Vector3(Subchunk.Size, Chunk.Height, Subchunk.Size),
+                Chunks[i].Position + new Vector3(Subchunk.Size, Chunk.Height, Subchunk.Size)
+            );
+
+            // Check if the bounding box is inside the frustum
+            if (frustum.Contains(subchunkBoundingBox) != ContainmentType.Disjoint)
+            {
+                // Only draw subchunks within the frustum
+                Chunks[i].Draw(effect);
+            }
+        }
     }
 }
