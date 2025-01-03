@@ -13,7 +13,7 @@ public class Noise
     public Noise(int seed)
     {
         // Generate permutation table based on the seed
-        Random random = new Random(seed);
+        Random random = new(seed);
         permutation = new int[256];
         for (int i = 0; i < 256; i++)
             permutation[i] = i;

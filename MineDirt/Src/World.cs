@@ -3,13 +3,22 @@ using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace MineDirt.Src;
 public static class World
 {
-    public static List<Chunk> Chunks = [];
+    public static Dictionary<Vector3, Chunk> Chunks = [];
     public static short RenderDistance { get; private set; } = 16;
+
+    public static long VertexCount => Chunks.Values.ToList().Sum(chunk => chunk.VertexCount);
+    public static long IndexCount => Chunks.Values.ToList().Sum(chunk => chunk.IndexCount);
+
+    public static void Initialize()
+    {
+
+    }
 
     public static void UpdateChunks()
     {
@@ -44,49 +53,124 @@ public static class World
                     chunksToKeep.Add(chunkPosition);
 
                     // Add new chunk if it doesn't already exist
-                    if (!Chunks.Any(chunk => chunk.Position == chunkPosition))
-                    {
-                        Chunks.Add(new Chunk(chunkPosition));
-                    }
+                    AddChunk(chunkPosition);
                 }
             }
         }
 
         // Remove chunks outside the render distance
-        Chunks.RemoveAll(chunk =>
-        {
-            if (!chunksToKeep.Contains(chunk.Position))
-            {
-                return true;
-            }
-            return false;
-        });
+        foreach (var item in Chunks.Keys)
+            if (!chunksToKeep.Contains(item))
+                Chunks.Remove(item);
 
-        //if (!Chunks.Any(chunk => chunk.Position == Vector3.Zero))
-        //{
-        //    Chunks.Add(new Chunk(Vector3.Zero));
-        //}
+        //Vector3[] positions = [
+        //    new(0, 0, 0),
+        //    new(16, 0, 0),
+        //    new(0, 0, 16),
+        //    new(16, 0, 16),
+        //];
+
+        //foreach (var position in positions)
+        //    AddChunk(position);
+
+        GenerateBuffers();
     }
 
+    private static void AddChunk(Vector3 position)
+    {
+        // Check if the chunk already exists
+        if (!Chunks.ContainsKey(position))
+        {
+            // Add the new chunk without generating buffers
+            Chunk newChunk = new(position);
+            Chunks.Add(position, newChunk);
+
+            // Add neighboring chunks
+            Vector3[] neighbors = [
+                new Vector3(position.X - Subchunk.Size, position.Y, position.Z), // West
+                    new Vector3(position.X + Subchunk.Size, position.Y, position.Z), // East
+                    new Vector3(position.X, position.Y, position.Z - Subchunk.Size), // South
+                    new Vector3(position.X, position.Y, position.Z + Subchunk.Size),  // North
+                ];
+
+            foreach (Vector3 neighborPosition in neighbors)
+            {
+                Chunk neighbourChunk;
+
+                if (!Chunks.ContainsKey(neighborPosition))
+                {
+                    // Add the neighboring chunk without generating buffers
+                    neighbourChunk = new(neighborPosition);
+                    neighbourChunk.HasUpdatedBuffers = true; // Skip buffer generation for neighbors
+                    Chunks.Add(neighborPosition, neighbourChunk);
+                }
+                else
+                {
+                    neighbourChunk = Chunks[neighborPosition];
+                }
+
+                if (HasAllNeighbours(neighborPosition))
+                {
+                    neighbourChunk.HasUpdatedBuffers = false;
+
+                    Vector3[] neighboursNeighbours = [
+                        new Vector3(neighborPosition.X - Subchunk.Size, neighborPosition.Y, neighborPosition.Z), // West
+                        new Vector3(neighborPosition.X + Subchunk.Size, neighborPosition.Y, neighborPosition.Z), // East
+                        new Vector3(neighborPosition.X, neighborPosition.Y, neighborPosition.Z - Subchunk.Size), // South
+                        new Vector3(neighborPosition.X, neighborPosition.Y, neighborPosition.Z + Subchunk.Size),  // North
+                    ];
+
+                    foreach (Vector3 neighboursNeighbourPosition in neighboursNeighbours)
+                        if (Chunks.TryGetValue(neighboursNeighbourPosition, out Chunk value))
+                            value.HasUpdatedBuffers = false;
+                }
+            }
+        }
+    }
+
+    private static void GenerateBuffers()
+    {
+        foreach (Chunk item in Chunks.Values)
+        {
+            if (!item.HasUpdatedBuffers)
+                item.GenerateSubchunkBuffers();
+        }
+    }
+
+    private static bool HasAllNeighbours(Vector3 position)
+    {
+        Vector3[] neighbors = [
+            new Vector3(position.X - Subchunk.Size, position.Y, position.Z), // West
+            new Vector3(position.X + Subchunk.Size, position.Y, position.Z), // East
+            new Vector3(position.X, position.Y, position.Z - Subchunk.Size), // South
+            new Vector3(position.X, position.Y, position.Z + Subchunk.Size),  // North
+        ];
+
+        foreach (Vector3 neighborPosition in neighbors)
+            if (!Chunks.ContainsKey(neighborPosition))
+                return false;
+
+        return true;
+    }
 
     public static void DrawChunks(BasicEffect effect)
     {
         // Get the camera's frustum
         BoundingFrustum frustum = new(effect.View * effect.Projection);
 
-        for (int i = 0; i < Chunks.Count; i++)
+        foreach (var chunk in Chunks.Values)
         {
             // Create a bounding box for the subchunk
             BoundingBox subchunkBoundingBox = new(
-                Chunks[i].Position - new Vector3(Subchunk.Size, Chunk.Height, Subchunk.Size),
-                Chunks[i].Position + new Vector3(Subchunk.Size, Chunk.Height, Subchunk.Size)
+                chunk.Position - new Vector3(Subchunk.Size, Chunk.Height, Subchunk.Size),
+                chunk.Position + new Vector3(Subchunk.Size, Chunk.Height, Subchunk.Size)
             );
 
             // Check if the bounding box is inside the frustum
             if (frustum.Contains(subchunkBoundingBox) != ContainmentType.Disjoint)
             {
                 // Only draw subchunks within the frustum
-                Chunks[i].Draw(effect);
+                chunk.Draw(effect);
             }
         }
     }

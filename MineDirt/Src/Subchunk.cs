@@ -10,13 +10,13 @@ public class Subchunk
 {
     public static int Size { get; private set; } = 16;
     public Vector3 Position { get; private set; }
-
-    // List to store all blocks in the chunk
     public Dictionary<Vector3, Block> ChunkBlocks { get; private set; }
-
-    // Vertex and Index Buffers for the entire chunk
+    public Chunk Chunk { get; private set; }
     public VertexBuffer VertexBuffer { get; private set; }
     public IndexBuffer IndexBuffer { get; private set; }
+    
+    public int VertexCount => VertexBuffer?.VertexCount ?? 0;
+    public int IndexCount => IndexBuffer?.IndexCount ?? 0;
 
     static Vector3[] faceDirections =
     [
@@ -28,14 +28,14 @@ public class Subchunk
         new Vector3(0, -1, 0), // Bottom
     ];
 
-    public Subchunk(Vector3 position)
+    public Subchunk(Chunk chunk, Vector3 position)
     {
+        Chunk = chunk;
         Position = position;
         ChunkBlocks = [];
 
         // Generate blocks in the chunk
         GenerateBlocks();
-        CreateBuffers();
     }
 
     private void GenerateBlocks()
@@ -93,7 +93,7 @@ public class Subchunk
         //}
     }
 
-    private void CreateBuffers()
+    public void GenerateBuffers()
     {
         if (ChunkBlocks.Count == 0)
             return;
@@ -109,14 +109,14 @@ public class Subchunk
         int vertexOffset = 0;
         int indexOffset = 0;
 
-        foreach (var block in ChunkBlocks)
+        foreach (KeyValuePair<Vector3, Block> block in ChunkBlocks)
         {
             for (int faceIndex = 0; faceIndex < 6; faceIndex++)
             {
                 if (IsFaceVisible(block.Key, faceDirections[faceIndex]))
                 {
                     // Add the vertices and indices for this face
-                    var faceVertices = block.Value.GetFaceVertices(faceIndex, block.Key);
+                    VertexPositionTexture[] faceVertices = block.Value.GetFaceVertices(faceIndex, block.Key);
 
                     for (int i = 0; i < faceVertices.Length; i++)
                         allVertices[vertexOffset + i] = faceVertices[i];
@@ -131,7 +131,7 @@ public class Subchunk
         }
 
         // Create the buffers
-        if(allVertices.Length == 0 || allIndices.Length == 0)
+        if (allVertices.Length == 0 || allIndices.Length == 0)
             return;
 
         VertexBuffer = new VertexBuffer(MineDirtGame.Graphics.GraphicsDevice, typeof(VertexPositionTexture), allVertices.Length, BufferUsage.WriteOnly);
@@ -144,15 +144,51 @@ public class Subchunk
     bool IsFaceVisible(Vector3 blockPosition, Vector3 direction)
     {
         Vector3 neighborPosition = blockPosition + direction;
-        if (ChunkBlocks.TryGetValue(neighborPosition, out var neighborBlock))
-            return false;
 
-        return true;
+        // Check if neighborPosition is out of the current subchunk bounds
+        bool isOutOfBounds =
+            neighborPosition.X < Position.X || neighborPosition.X >= Position.X + Size ||
+            neighborPosition.Y < Position.Y || neighborPosition.Y >= Position.Y + Size ||
+            neighborPosition.Z < Position.Z || neighborPosition.Z >= Position.Z + Size;
+
+        if (isOutOfBounds)
+        {
+            // Calculate the chunk position in world coordinates
+            Vector3 chunkPos = neighborPosition.ToChunkPosition();
+
+            Chunk chunk; 
+            
+            if(direction.Z == 0 && direction.X == 0)
+                chunk = Chunk; 
+            else
+                chunk = World.Chunks.GetValueOrDefault(chunkPos);
+
+            if (chunk == null)
+                return true; // Neighbor chunk does not exist, face is visible
+
+            // Calculate the subchunk position in world coordinates
+            Vector3 subchunkPos = neighborPosition.ToSubchunkPosition();
+
+            Subchunk subchunk = chunk.Subchunks.GetValueOrDefault(subchunkPos);
+
+            if (subchunk == null)
+                return true; // Neighbor subchunk does not exist, face is visible
+
+            // Check if the neighbor block exists
+            if (subchunk.ChunkBlocks.TryGetValue(neighborPosition, out Block neighborBlock))
+                return false; // Neighbor block exists, face is not visible
+        }
+        else if (ChunkBlocks.TryGetValue(neighborPosition, out Block neighborBlock))
+        {
+            return false; // Neighbor block exists within the same subchunk
+        }
+
+        return true; // No neighbor block exists, face is visible
     }
 
     public void Draw(BasicEffect effect)
     {
-        if (ChunkBlocks.Count == 0)
+        if (VertexCount == 0)
             return;
 
         // Set the texture for the chunk
@@ -164,7 +200,7 @@ public class Subchunk
         MineDirtGame.Graphics.GraphicsDevice.Indices = IndexBuffer;
 
         // Apply the effect and draw the chunk
-        foreach (var pass in effect.CurrentTechnique.Passes)
+        foreach (EffectPass pass in effect.CurrentTechnique.Passes)
         {
             pass.Apply();
             MineDirtGame.Graphics.GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, IndexBuffer.IndexCount / 3);

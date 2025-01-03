@@ -23,7 +23,7 @@ public class MineDirtGame : Game
 
     private SpriteBatch _spriteBatch;
 
-    public static Noise Noise = new Noise(1234);
+    public static Noise Noise = new(1234);
 
     BasicEffect effect;
     
@@ -56,6 +56,7 @@ public class MineDirtGame : Game
     protected override void Initialize()
     {
         Camera = new Camera3D(new Vector3(0, 10, 0), GraphicsDevice.Viewport.AspectRatio);
+        World.Initialize();
 
 #if DEBUG
         debug.Initialize();

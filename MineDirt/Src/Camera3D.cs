@@ -5,7 +5,7 @@ using MineDirt;
 
 public class Camera3D
 {
-    public Vector3 Position { get; private set; }
+    public Vector3 Position { get; set; }
     public Vector3 Forward { get; private set; } = Vector3.Forward;
     public Vector3 Up { get; private set; } = Vector3.Up;
 
