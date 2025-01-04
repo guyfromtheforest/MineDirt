@@ -49,27 +49,28 @@ public class Subchunk
 
                 for (int y = 0; y < Size; y++)
                 {
-                    Vector3 blockPosition = Position + new Vector3(x, y, z);
+                    Vector3 blockPosition = new(x, y, z);
+                    Vector3 worldBlockPosition = blockPosition + Position;
 
-                    if (blockPosition.Y == 0)
+                    if (worldBlockPosition.Y == 0)
                     {
                         // Bedrock at the bottom layer
                         //ChunkBlocks.Add(blockPosition, Blocks.Bedrock(blockPosition));
                         Blocks.Add(blockPosition, BlockType.Bedrock);
                     }
-                    else if (blockPosition.Y < maxHeight - 10)
+                    else if (worldBlockPosition.Y < maxHeight - 10)
                     {
                         // Stone below the surface
                         //ChunkBlocks.Add(blockPosition, Blocks.Stone(blockPosition));
                         Blocks.Add(blockPosition, BlockType.Stone);
                     }
-                    else if (blockPosition.Y < maxHeight - 1)
+                    else if (worldBlockPosition.Y < maxHeight - 1)
                     {
                         // Dirt below the surface
                         //ChunkBlocks.Add(blockPosition, Blocks.Dirt(blockPosition));
                         Blocks.Add(blockPosition, BlockType.Dirt);
                     }
-                    else if (blockPosition.Y == maxHeight - 1)
+                    else if (worldBlockPosition.Y == maxHeight - 1)
                     {
                         // Grass on the surface
                         //ChunkBlocks.Add(blockPosition, Blocks.Grass(blockPosition));
@@ -101,7 +102,7 @@ public class Subchunk
 
     public void GenerateBuffers()
     {
-        if (Blocks.Count == 0)
+        if (Blocks.Count == 0 || MineDirtGame.Graphics?.GraphicsDevice == null)
             return;
 
         // Calculate total number of vertices and indices needed for the chunk
@@ -123,7 +124,7 @@ public class Subchunk
                     continue;
                 
                 // Add the vertices and indices for this face
-                QuantizedVertex[] faceVertices = Block.GetFaceVertices(block.Value, faceIndex, block.Key);
+                QuantizedVertex[] faceVertices = Block.GetFaceVertices(block.Value, faceIndex, block.Key + Position);
 
                 for (int i = 0; i < faceVertices.Length; i++)
                     allVertices[vertexOffset + i] = faceVertices[i];
@@ -150,17 +151,22 @@ public class Subchunk
     bool IsFaceVisible(Vector3 blockPosition, Vector3 direction)
     {
         Vector3 neighborPosition = blockPosition + direction;
+        Vector3 subchunkNbPos = new();
+
+        subchunkNbPos.X = (neighborPosition.X % Size + Size) % Size;
+        subchunkNbPos.Y = (neighborPosition.Y % Size + Size) % Size;
+        subchunkNbPos.Z = (neighborPosition.Z % Size + Size) % Size;
 
         // Check if neighborPosition is out of the current subchunk bounds
         bool isOutOfBounds =
-            neighborPosition.X < Position.X || neighborPosition.X >= Position.X + Size ||
-            neighborPosition.Y < Position.Y || neighborPosition.Y >= Position.Y + Size ||
-            neighborPosition.Z < Position.Z || neighborPosition.Z >= Position.Z + Size;
+            neighborPosition.X < 0 || neighborPosition.X >= Size ||
+            neighborPosition.Y < 0 || neighborPosition.Y >= Size ||
+            neighborPosition.Z < 0|| neighborPosition.Z >= Size;
 
         if (isOutOfBounds)
         {
             // Calculate the chunk position in world coordinates
-            Vector3 chunkPos = neighborPosition.ToChunkPosition();
+            Vector3 chunkPos = (neighborPosition + Position).ToChunkPosition();
 
             Chunk chunk; 
             
@@ -170,21 +176,21 @@ public class Subchunk
                 chunk = World.Chunks.GetValueOrDefault(chunkPos);
 
             if (chunk == null)
-                return true; // Neighbor chunk does not exist, face is visible
+            // TODO test this
+                return false; // Neighbor chunk does not exist, face is visible
 
             // Calculate the subchunk position in world coordinates
-            Vector3 subchunkPos = neighborPosition.ToSubchunkPosition();
-
+            Vector3 subchunkPos = (neighborPosition + Position).ToSubchunkPosition();
             Subchunk subchunk = chunk.Subchunks.GetValueOrDefault(subchunkPos);
 
             if (subchunk == null)
                 return true; // Neighbor subchunk does not exist, face is visible
 
             // Check if the neighbor block exists
-            if (subchunk.Blocks.TryGetValue(neighborPosition, out _))
+            if (subchunk.Blocks.TryGetValue(subchunkNbPos, out _))
                 return false; // Neighbor block exists, face is not visible
         }
-        else if (Blocks.TryGetValue(neighborPosition, out _))
+        else if (Blocks.TryGetValue(subchunkNbPos, out _))
         {
             return false; // Neighbor block exists within the same subchunk
         }
