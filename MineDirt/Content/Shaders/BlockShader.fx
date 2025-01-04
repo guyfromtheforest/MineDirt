@@ -51,7 +51,11 @@ struct VertexOutput
 VertexOutput VS_Main(VertexInput input)
 {
     VertexOutput output;
-
+    
+    //int X = (int) ((input.Position / (32 * 32)) % 32);
+    //int Y = (int) ((input.Position / 32) % 32);
+    //int Z = (int) (input.Position % 32);
+    
     // Transform and decompress position
     output.Position = mul(float4(input.Position, 1.0f), WorldViewProjection);
 

@@ -17,14 +17,14 @@ public class Block
     public static QuantizedVertex[] Vertices(Vector3 pos, byte blockType)
     {
         Vector3[] positions = [
-                new Vector3(pos.X - 0.5f, pos.Y + 0.5f, pos.Z - 0.5f),
-                new Vector3(pos.X + 0.5f, pos.Y + 0.5f, pos.Z - 0.5f),
-                new Vector3(pos.X - 0.5f, pos.Y - 0.5f, pos.Z - 0.5f),
-                new Vector3(pos.X + 0.5f, pos.Y - 0.5f, pos.Z - 0.5f),
-                new Vector3(pos.X - 0.5f, pos.Y + 0.5f, pos.Z + 0.5f),
-                new Vector3(pos.X + 0.5f, pos.Y + 0.5f, pos.Z + 0.5f),
-                new Vector3(pos.X - 0.5f, pos.Y - 0.5f, pos.Z + 0.5f),
-                new Vector3(pos.X + 0.5f, pos.Y - 0.5f, pos.Z + 0.5f)
+                new Vector3(pos.X - 0f, pos.Y + 1f, pos.Z - 0f),
+                new Vector3(pos.X + 1f, pos.Y + 1f, pos.Z - 0f),
+                new Vector3(pos.X - 0f, pos.Y - 0f, pos.Z - 0f),
+                new Vector3(pos.X + 1f, pos.Y - 0f, pos.Z - 0f),
+                new Vector3(pos.X - 0f, pos.Y + 1f, pos.Z + 1f),
+                new Vector3(pos.X + 1f, pos.Y + 1f, pos.Z + 1f),
+                new Vector3(pos.X - 0f, pos.Y - 0f, pos.Z + 1f),
+                new Vector3(pos.X + 1f, pos.Y - 0f, pos.Z + 1f)
             ];
 
         return [

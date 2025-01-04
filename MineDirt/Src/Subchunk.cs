@@ -40,57 +40,59 @@ public class Subchunk
 
     private void GenerateBlocks()
     {
-        //for (int x = 0; x < Size; x++)
+        for (int x = 0; x < Size; x++)
+        {
+            for (int z = 0; z < Size; z++)
+            {
+                float noiseValue = MineDirtGame.Noise.Generate(Position.X + x, Position.Z + z) * Chunk.Height; // Scale noise to desired height
+                int maxHeight = MathHelper.Clamp((int)Math.Round(noiseValue), 1, Chunk.Height * Size - 1);
+
+                for (int y = 0; y < Size; y++)
+                {
+                    Vector3 blockPosition = Position + new Vector3(x, y, z);
+
+                    if (blockPosition.Y == 0)
+                    {
+                        // Bedrock at the bottom layer
+                        ChunkBlocks.Add(blockPosition, Blocks.Bedrock(blockPosition));
+                    }
+                    else if (blockPosition.Y < maxHeight - 10)
+                    {
+                        // Stone below the surface
+                        ChunkBlocks.Add(blockPosition, Blocks.Stone(blockPosition));
+                    }
+                    else if (blockPosition.Y < maxHeight - 1)
+                    {
+                        // Dirt below the surface
+                        ChunkBlocks.Add(blockPosition, Blocks.Dirt(blockPosition));
+                    }
+                    else if (blockPosition.Y == maxHeight - 1)
+                    {
+                        // Grass on the surface
+                        ChunkBlocks.Add(blockPosition, Blocks.Grass(blockPosition));
+                    }
+                    else
+                    {
+                        // Air (no block) above the surface
+                        // Optionally skip adding blocks above the surface for optimization
+                    }
+                }
+            }
+        }
+
+        //int l = 3;
+        //for (int i = 0; i < l; i++)
         //{
-        //    for (int z = 0; z < Size; z++)
+        //    for (int j = 0; j < l; j++)
         //    {
-        //        float noiseValue = MineDirtGame.Noise.Generate(Position.X + x, Position.Z + z) * Chunk.Height; // Scale noise to desired height
-        //        int maxHeight = MathHelper.Clamp((int)Math.Round(noiseValue), 1, Chunk.Height * Size - 1);
-
-        //        for (int y = 0; y < Size; y++)
+        //        for (int k = 0; k < l; k++)
         //        {
-        //            Vector3 blockPosition = Position + new Vector3(x, y, z);
-
-        //            if (blockPosition.Y == 0)
-        //            {
-        //                // Bedrock at the bottom layer
-        //                ChunkBlocks.Add(blockPosition, Blocks.Bedrock(blockPosition));
-        //            }
-        //            else if (blockPosition.Y < maxHeight - 10)
-        //            {
-        //                // Stone below the surface
-        //                ChunkBlocks.Add(blockPosition, Blocks.Stone(blockPosition));
-        //            }
-        //            else if (blockPosition.Y < maxHeight - 1)
-        //            {
-        //                // Dirt below the surface
-        //                ChunkBlocks.Add(blockPosition, Blocks.Dirt(blockPosition));
-        //            }
-        //            else if (blockPosition.Y == maxHeight - 1)
-        //            {
-        //                // Grass on the surface
-        //                ChunkBlocks.Add(blockPosition, Blocks.Grass(blockPosition));
-        //            }
-        //            else
-        //            {
-        //                // Air (no block) above the surface
-        //                // Optionally skip adding blocks above the surface for optimization
-        //            }
+        //            ChunkBlocks.Add(new Vector3(i, j, k), Blocks.Stone(new Vector3(i, j, k)));
         //        }
         //    }
         //}
 
-        int l = 1;
-        for (int i = 0; i < l; i++)
-        {
-            for (int j = 0; j < l; j++)
-            {
-                for (int k = 0; k < l; k++)
-                {
-                    ChunkBlocks.Add(new Vector3(i, j, k), Blocks.Stone(new Vector3(i, j, k)));
-                }
-            }
-        }
+        //l = 0;
     }
 
     public void GenerateBuffers()

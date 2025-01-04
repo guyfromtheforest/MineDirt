@@ -85,6 +85,7 @@ public class MineDirtGame : Game
         blockShader.Parameters["WorldViewProjection"].SetValue(Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 0.1f, 100f));
         // vertexShader.Parameters["PositionScale"].SetValue(Vector3.One);
         // vertexShader.Parameters["UVScale"].SetValue(Vector2.One);
+        blockShader.Parameters["TextureAtlas"].SetValue(TextureAtlas);
 
 #if DEBUG
         debug.LoadContent();
@@ -127,7 +128,6 @@ public class MineDirtGame : Game
         effect.Projection = Camera.Projection;
 
         blockShader.Parameters["WorldViewProjection"].SetValue(Camera.View * Camera.Projection);
-        blockShader.Parameters["TextureAtlas"].SetValue(TextureAtlas);
 
         World.DrawChunks(blockShader);
         //chunk.Draw(effect);
