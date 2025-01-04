@@ -188,7 +188,7 @@ public class Subchunk
 
     public void Draw(BasicEffect effect)
     {
-        if (VertexCount == 0)
+        if (VertexCount == 0 || IndexCount == 0)
             return;
 
         // Set the texture for the chunk

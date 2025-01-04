@@ -31,6 +31,9 @@ public class Debug
     private long vertexCount = 0; 
     private long indexCount = 0;    
 
+    private int chunkUpdateCount = 0;
+    private int chunkCount = 0;
+
     private Vector3 TeleportPos = new(0, 0, 0);
 
     private Vector3 cameraChunkPosition = Vector3.Zero;
@@ -80,6 +83,14 @@ public class Debug
             upsTimer -= 1f;  // Reset the timer
             updateCount = 0;
 
+            chunkUpdateCount = 0;
+            foreach (var item in World.Chunks.Values)
+            {
+                chunkUpdateCount += item.UpdateCount;
+            }
+
+            chunkCount = World.Chunks.Count;
+
             // Update the number of Vertices and Indices
             vertexCount = World.VertexCount;
             indexCount = World.IndexCount;
@@ -126,6 +137,12 @@ public class Debug
             // Display FPS and UPS
             ImGui.Text($"FPS: {fps}");
             ImGui.Text($"UPS: {ups}");
+
+            // Display chunk count
+            ImGui.Text($"Chunks Count: {chunkCount}");
+
+            // Chunks total update count
+            ImGui.Text($"Chunks Update Count: {chunkUpdateCount}");
 
             // Display number of Vertices and Indices
             ImGui.Text($"Vertices: {vertexCount}");

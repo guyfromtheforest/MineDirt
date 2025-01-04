@@ -14,6 +14,7 @@ public class Chunk
     public bool HasBlocks => Subchunks.Values.Any(subchunk => subchunk.ChunkBlocks.Count != 0);
 
     public bool HasUpdatedBuffers = false; 
+    public int UpdateCount = 0;
 
     // List to store all subchunks
     public Dictionary<Vector3, Subchunk> Subchunks { get; private set; }
@@ -47,7 +48,9 @@ public class Chunk
         foreach (var subchunk in Subchunks)
         {
             subchunk.Value.GenerateBuffers();
-        }
+        }        
+        
+        UpdateCount++;
     }   
 
     public void Draw(BasicEffect effect)

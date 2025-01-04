@@ -1,19 +1,25 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Emit;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace MineDirt.Src;
 public static class World
 {
-    public static Dictionary<Vector3, Chunk> Chunks = [];
+    public static ConcurrentDictionary<Vector3, Chunk> Chunks = [];
     public static short RenderDistance { get; private set; } = 16;
 
     public static long VertexCount => Chunks.Values.ToList().Sum(chunk => chunk.VertexCount);
     public static long IndexCount => Chunks.Values.ToList().Sum(chunk => chunk.IndexCount);
+
+    public static TaskProcessor WorldGenThread = new TaskProcessor();
 
     public static void Initialize()
     {
@@ -48,7 +54,7 @@ public static class World
                 );
 
                 // If the chunk is within the render distance (in squared distance to avoid sqrt)
-                if (distanceSquared <= renderDistanceSquared)
+                if (distanceSquared <= renderDistanceSquared + 1)
                 {
                     chunksToKeep.Add(chunkPosition);
 
@@ -61,7 +67,7 @@ public static class World
         // Remove chunks outside the render distance
         foreach (var item in Chunks.Keys)
             if (!chunksToKeep.Contains(item))
-                Chunks.Remove(item);
+                Chunks.Remove(item, out _);
 
         //Vector3[] positions = [
         //    new(0, 0, 0),
@@ -83,48 +89,62 @@ public static class World
         {
             // Add the new chunk without generating buffers
             Chunk newChunk = new(position);
-            Chunks.Add(position, newChunk);
+            Chunks.TryAdd(position, newChunk);
 
             // Add neighboring chunks
             Vector3[] neighbors = [
-                new Vector3(position.X - Subchunk.Size, position.Y, position.Z), // West
+                    new Vector3(position.X - Subchunk.Size, position.Y, position.Z), // West
                     new Vector3(position.X + Subchunk.Size, position.Y, position.Z), // East
                     new Vector3(position.X, position.Y, position.Z - Subchunk.Size), // South
                     new Vector3(position.X, position.Y, position.Z + Subchunk.Size),  // North
+                    //new Vector3(position.X + Subchunk.Size, position.Y, position.Z + Subchunk.Size),  // North-East
+                    //new Vector3(position.X - Subchunk.Size, position.Y, position.Z + Subchunk.Size),  // North-West
+                    //new Vector3(position.X + Subchunk.Size, position.Y, position.Z - Subchunk.Size),  // South-East
+                    //new Vector3(position.X - Subchunk.Size, position.Y, position.Z - Subchunk.Size),  // South-West
+
                 ];
 
-            foreach (Vector3 neighborPosition in neighbors)
+            foreach (var item in neighbors)
             {
-                Chunk neighbourChunk;
-
-                if (!Chunks.ContainsKey(neighborPosition))
+                if(Chunks.TryGetValue(item, out Chunk chunk))
                 {
-                    // Add the neighboring chunk without generating buffers
-                    neighbourChunk = new(neighborPosition);
-                    neighbourChunk.HasUpdatedBuffers = true; // Skip buffer generation for neighbors
-                    Chunks.Add(neighborPosition, neighbourChunk);
-                }
-                else
-                {
-                    neighbourChunk = Chunks[neighborPosition];
-                }
-
-                if (HasAllNeighbours(neighborPosition))
-                {
-                    neighbourChunk.HasUpdatedBuffers = false;
-
-                    Vector3[] neighboursNeighbours = [
-                        new Vector3(neighborPosition.X - Subchunk.Size, neighborPosition.Y, neighborPosition.Z), // West
-                        new Vector3(neighborPosition.X + Subchunk.Size, neighborPosition.Y, neighborPosition.Z), // East
-                        new Vector3(neighborPosition.X, neighborPosition.Y, neighborPosition.Z - Subchunk.Size), // South
-                        new Vector3(neighborPosition.X, neighborPosition.Y, neighborPosition.Z + Subchunk.Size),  // North
-                    ];
-
-                    foreach (Vector3 neighboursNeighbourPosition in neighboursNeighbours)
-                        if (Chunks.TryGetValue(neighboursNeighbourPosition, out Chunk value))
-                            value.HasUpdatedBuffers = false;
+                    chunk.HasUpdatedBuffers = false;
                 }
             }
+
+            //foreach (Vector3 neighborPosition in neighbors)
+            //{
+            //    Chunk neighbourChunk;
+
+            //    if (!Chunks.ContainsKey(neighborPosition))
+            //    {
+            //        // Add the neighboring chunk without generating buffers
+            //        neighbourChunk = new(neighborPosition);
+            //        Chunks.TryAdd(neighborPosition, neighbourChunk);
+            //    }
+            //    else
+            //    {
+            //        neighbourChunk = Chunks[neighborPosition];
+            //    }
+                
+            //    //neighbourChunk.HasUpdatedBuffers = false;
+
+            //    //if (HasAllNeighbours(neighborPosition))
+            //    //{
+            //    //    neighbourChunk.HasUpdatedBuffers = false;
+
+            //    //    Vector3[] neighboursNeighbours = [
+            //    //        new Vector3(neighborPosition.X - Subchunk.Size, neighborPosition.Y, neighborPosition.Z), // West
+            //    //        new Vector3(neighborPosition.X + Subchunk.Size, neighborPosition.Y, neighborPosition.Z), // East
+            //    //        new Vector3(neighborPosition.X, neighborPosition.Y, neighborPosition.Z - Subchunk.Size), // South
+            //    //        new Vector3(neighborPosition.X, neighborPosition.Y, neighborPosition.Z + Subchunk.Size),  // North
+            //    //    ];
+
+            //    //    foreach (Vector3 neighboursNeighbourPosition in neighboursNeighbours)
+            //    //        if (Chunks.TryGetValue(neighboursNeighbourPosition, out Chunk value) && HasAllNeighbours(neighboursNeighbourPosition))
+            //    //            value.HasUpdatedBuffers = false;
+            //    //}
+            //}
         }
     }
 
@@ -133,7 +153,7 @@ public static class World
         foreach (Chunk item in Chunks.Values)
         {
             if (!item.HasUpdatedBuffers)
-                item.GenerateSubchunkBuffers();
+               item.GenerateSubchunkBuffers();
         }
     }
 
