@@ -10,7 +10,7 @@ public class Subchunk
 {
     public static int Size { get; private set; } = 16;
     public Vector3 Position { get; private set; }
-    public Dictionary<Vector3, Block> ChunkBlocks { get; private set; }
+    public Dictionary<Vector3, BlockType> Blocks { get; private set; }
     public Chunk Chunk { get; private set; }
     public VertexBuffer VertexBuffer { get; private set; }
     public IndexBuffer IndexBuffer { get; private set; }
@@ -32,7 +32,7 @@ public class Subchunk
     {
         Chunk = chunk;
         Position = position;
-        ChunkBlocks = [];
+        Blocks = [];
 
         // Generate blocks in the chunk
         GenerateBlocks();
@@ -54,22 +54,26 @@ public class Subchunk
                     if (blockPosition.Y == 0)
                     {
                         // Bedrock at the bottom layer
-                        ChunkBlocks.Add(blockPosition, Blocks.Bedrock(blockPosition));
+                        //ChunkBlocks.Add(blockPosition, Blocks.Bedrock(blockPosition));
+                        Blocks.Add(blockPosition, BlockType.Bedrock);
                     }
                     else if (blockPosition.Y < maxHeight - 10)
                     {
                         // Stone below the surface
-                        ChunkBlocks.Add(blockPosition, Blocks.Stone(blockPosition));
+                        //ChunkBlocks.Add(blockPosition, Blocks.Stone(blockPosition));
+                        Blocks.Add(blockPosition, BlockType.Stone);
                     }
                     else if (blockPosition.Y < maxHeight - 1)
                     {
                         // Dirt below the surface
-                        ChunkBlocks.Add(blockPosition, Blocks.Dirt(blockPosition));
+                        //ChunkBlocks.Add(blockPosition, Blocks.Dirt(blockPosition));
+                        Blocks.Add(blockPosition, BlockType.Dirt);
                     }
                     else if (blockPosition.Y == maxHeight - 1)
                     {
                         // Grass on the surface
-                        ChunkBlocks.Add(blockPosition, Blocks.Grass(blockPosition));
+                        //ChunkBlocks.Add(blockPosition, Blocks.Grass(blockPosition));
+                        Blocks.Add(blockPosition, BlockType.Grass);
                     }
                     else
                     {
@@ -97,12 +101,12 @@ public class Subchunk
 
     public void GenerateBuffers()
     {
-        if (ChunkBlocks.Count == 0)
+        if (Blocks.Count == 0)
             return;
 
         // Calculate total number of vertices and indices needed for the chunk
-        int totalVertices = ChunkBlocks.Count * 24;  // 24 vertices per block (6 faces, 4 vertices per face)
-        int totalIndices = ChunkBlocks.Count * 36;   // 36 indices per block (6 faces, 2 triangles per face)
+        int totalVertices = Blocks.Count * 24;  // 24 vertices per block (6 faces, 4 vertices per face)
+        int totalIndices = Blocks.Count * 36;   // 36 indices per block (6 faces, 2 triangles per face)
 
         // Create vertex and index arrays
         QuantizedVertex[] allVertices = new QuantizedVertex[totalVertices];
@@ -111,7 +115,7 @@ public class Subchunk
         ushort vertexOffset = 0;
         int indexOffset = 0;
 
-        foreach (KeyValuePair<Vector3, Block> block in ChunkBlocks)
+        foreach (var block in Blocks)
         {
             for (byte faceIndex = 0; faceIndex < 6; faceIndex++)
             {
@@ -119,7 +123,7 @@ public class Subchunk
                     continue;
                 
                 // Add the vertices and indices for this face
-                QuantizedVertex[] faceVertices = block.Value.GetFaceVertices(faceIndex, block.Key);
+                QuantizedVertex[] faceVertices = Block.GetFaceVertices(block.Value, faceIndex, block.Key);
 
                 for (int i = 0; i < faceVertices.Length; i++)
                     allVertices[vertexOffset + i] = faceVertices[i];
@@ -177,10 +181,10 @@ public class Subchunk
                 return true; // Neighbor subchunk does not exist, face is visible
 
             // Check if the neighbor block exists
-            if (subchunk.ChunkBlocks.TryGetValue(neighborPosition, out Block neighborBlock))
+            if (subchunk.Blocks.TryGetValue(neighborPosition, out _))
                 return false; // Neighbor block exists, face is not visible
         }
-        else if (ChunkBlocks.TryGetValue(neighborPosition, out Block neighborBlock))
+        else if (Blocks.TryGetValue(neighborPosition, out _))
         {
             return false; // Neighbor block exists within the same subchunk
         }

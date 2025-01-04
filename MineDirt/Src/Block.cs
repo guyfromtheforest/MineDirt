@@ -7,14 +7,22 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace MineDirt.Src;
-public class Block
-{
-    public byte BlockType { get; private set; }
 
-    public static Dictionary<byte, Vector2[][]> textures = [];
+public enum BlockType : byte
+{
+    Dirt,
+    Grass,
+    Cobblestone,
+    Bedrock,
+    Stone
+}
+
+public static class Block
+{
+    public static Dictionary<BlockType, Vector2[][]> textures = [];
     public static byte[] Indices = [0, 1, 2, 2, 1, 3];
 
-    public static QuantizedVertex[] Vertices(Vector3 pos, byte blockType)
+    public static QuantizedVertex[] Vertices(Vector3 pos, BlockType blockType)
     {
         Vector3[] positions = [
                 new Vector3(pos.X - 0f, pos.Y + 1f, pos.Z - 0f),
@@ -187,10 +195,8 @@ public class Block
     // [0] = Front, Back, Left, Right, [1] = Top, Bottom
     // [0] = Front, Back, Left, Right, [1] = Top, [2] = Bottom
     // [0] = Front, [1] = Back, [2] = Left, [3] = Right, [4] = Top, [5] = Bottom]
-    public Block(byte blockType, byte[] textureAtlasIndices)
+    public static void Load(BlockType blockType, byte[] textureAtlasIndices)
     {
-        BlockType = blockType;
-
         if (!textures.ContainsKey(blockType))
         {
             // Get texture coordinates for each face (front, back, left, right, top, bottom)
@@ -248,10 +254,10 @@ public class Block
         ];
     }
 
-    public QuantizedVertex[] GetFaceVertices(byte faceIndex, Vector3 pos)
+    public static QuantizedVertex[] GetFaceVertices(BlockType blockType, byte faceIndex, Vector3 pos)
     {
         // Each face has 4 vertices in the CustomVertex array
         // Face indices: 0 = Front, 1 = Back, 2 = Left, 3 = Right, 4 = Top, 5 = Bottom
-        return Vertices(pos, BlockType).Skip(faceIndex * 4).Take(4).ToArray();
+        return Vertices(pos, blockType).Skip(faceIndex * 4).Take(4).ToArray();
     }
 }

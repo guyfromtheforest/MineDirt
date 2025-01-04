@@ -87,6 +87,12 @@ public class MineDirtGame : Game
         // vertexShader.Parameters["UVScale"].SetValue(Vector2.One);
         blockShader.Parameters["TextureAtlas"].SetValue(TextureAtlas);
 
+        Block.Load(BlockType.Dirt, [2]);
+        Block.Load(BlockType.Grass, [1, 0, 2]);
+        Block.Load(BlockType.Cobblestone, [3]);
+        Block.Load(BlockType.Bedrock, [4]);
+        Block.Load(BlockType.Stone, [5]);
+
 #if DEBUG
         debug.LoadContent();
 #endif
