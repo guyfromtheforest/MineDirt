@@ -149,5 +149,4 @@ public class Block
         // Face indices: 0 = Front, 1 = Back, 2 = Left, 3 = Right, 4 = Top, 5 = Bottom
         return Vertices(pos, BlockType).Skip(faceIndex * 4).Take(4).ToArray();
     }
-
 }

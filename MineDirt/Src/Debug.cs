@@ -95,6 +95,8 @@ public class Debug
             vertexCount = World.VertexCount;
             indexCount = World.IndexCount;
 
+            currentProcess = Process.GetCurrentProcess();
+
             workingSet = currentProcess.WorkingSet64; // Physical memory usage in bytes
             privateMemory = currentProcess.PrivateMemorySize64; // Private memory in bytes
             virtualMemory = currentProcess.VirtualMemorySize64; // Virtual memory usage in bytes

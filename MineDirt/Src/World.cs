@@ -20,7 +20,7 @@ public static class World
     public static long VertexCount => Chunks.Values.ToList().Sum(chunk => chunk.VertexCount);
     public static long IndexCount => Chunks.Values.ToList().Sum(chunk => chunk.IndexCount);
 
-    public static TaskProcessor WorldGenThread = new TaskProcessor();
+    public static TaskProcessor WorldGenThread = new TaskProcessor(4);
 
     public static void Initialize() { }
 
@@ -77,7 +77,7 @@ public static class World
         //foreach (var position in positions)
         //    AddChunk(position);
 
-        GenerateBuffers();
+        // GenerateBuffers();
     }
 
     private static void AddChunk(Vector3 position)
@@ -106,7 +106,11 @@ public static class World
             {
                 if (Chunks.TryGetValue(item, out Chunk chunk))
                 {
-                    chunk.HasUpdatedBuffers = false;
+                    if(!chunk.IsUpdatingBuffers)
+                    {
+                        chunk.IsUpdatingBuffers = true;
+                        WorldGenThread.EnqueueTask(chunk.GenerateSubchunkBuffers);
+                    }
                 }
             }
 

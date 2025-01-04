@@ -4,22 +4,32 @@ using System.Threading;
 
 public class TaskProcessor
 {
-    private readonly Thread _workerThread;
     private readonly BlockingCollection<Action> _taskQueue = new();
+    private readonly Thread[] _workerThreads;
     private bool _isRunning = true;
 
-    public TaskProcessor()
+    public TaskProcessor(int numberOfThreads)
     {
-        _workerThread = new Thread(ProcessTasks)
-        {
-            IsBackground = true
-        };
+        if (numberOfThreads <= 0)
+            throw new ArgumentException("Number of threads must be greater than zero.", nameof(numberOfThreads));
 
-        _workerThread.Start();
+        _workerThreads = new Thread[numberOfThreads];
+
+        for (int i = 0; i < numberOfThreads; i++)
+        {
+            _workerThreads[i] = new Thread(ProcessTasks)
+            {
+                IsBackground = true
+            };
+            _workerThreads[i].Start();
+        }
     }
 
     public void EnqueueTask(Action task)
     {
+        if (!_isRunning)
+            throw new InvalidOperationException("TaskProcessor is no longer running.");
+
         _taskQueue.Add(task);
     }
 
@@ -27,11 +37,17 @@ public class TaskProcessor
     {
         _isRunning = false;
         _taskQueue.CompleteAdding();
+
+        foreach (var thread in _workerThreads)
+        {
+            if (thread.IsAlive)
+                thread.Join(); // Wait for all threads to finish
+        }
     }
 
     private void ProcessTasks()
     {
-        while (_isRunning || _taskQueue.Count > 0)
+        while (_isRunning || !_taskQueue.IsCompleted)
         {
             try
             {
