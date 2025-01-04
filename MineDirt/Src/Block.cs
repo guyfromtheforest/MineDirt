@@ -10,6 +10,7 @@ namespace MineDirt.Src;
 
 public enum BlockType : byte
 {
+    Air,
     Dirt,
     Grass,
     Cobblestone,

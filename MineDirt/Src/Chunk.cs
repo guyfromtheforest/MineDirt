@@ -11,8 +11,6 @@ public class Chunk
     public long VertexCount => Subchunks.Values.ToList().Sum(subchunk => subchunk.VertexCount);
     public long IndexCount => Subchunks.Values.ToList().Sum(subchunk => subchunk.IndexCount);
 
-    public bool HasBlocks => Subchunks.Values.Any(subchunk => subchunk.Blocks.Count != 0);
-
     public bool HasUpdatedBuffers = false; 
     public bool IsUpdatingBuffers = false;
     public int UpdateCount = 0;

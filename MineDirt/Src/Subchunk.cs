@@ -1,19 +1,18 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System;
+using System.Collections.Generic;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using MineDirt;
 using MineDirt.Src;
 using MineDirt.Src.Noise;
-using System;
-using System.Collections.Generic;
-
-
 
 public class Subchunk
 {
     public static int Size { get; private set; } = 16;
     public Vector3 Position { get; private set; }
-    public Dictionary<Vector3, BlockType> Blocks { get; private set; }
+    public BlockType[] Blocks { get; private set; }
+    public ushort BlockCount;
     public Chunk Chunk { get; private set; }
     public VertexBuffer VertexBuffer { get; private set; }
     public IndexBuffer IndexBuffer { get; private set; }
@@ -24,10 +23,10 @@ public class Subchunk
     static Vector3[] faceDirections =
     [
         new Vector3(0, 0, -1), // Front
-        new Vector3(0, 0, 1),  // Back
+        new Vector3(0, 0, 1), // Back
         new Vector3(-1, 0, 0), // Left
-        new Vector3(1, 0, 0),  // Right
-        new Vector3(0, 1, 0),  // Top
+        new Vector3(1, 0, 0), // Right
+        new Vector3(0, 1, 0), // Top
         new Vector3(0, -1, 0), // Bottom
     ];
 
@@ -35,7 +34,7 @@ public class Subchunk
     {
         Chunk = chunk;
         Position = position;
-        Blocks = [];
+        Blocks = new BlockType[Size * Size * Size];
 
         // Generate blocks in the chunk
         GenerateBlocks();
@@ -47,7 +46,12 @@ public class Subchunk
         {
             for (int z = 0; z < Size; z++)
             {
-                float noiseValue = Utils.ScaleNoise(MineDirtGame.Noise.GetNoise(Position.X + x, Position.Z + z), 0.25f, 0.75f) * Chunk.Height;
+                float noiseValue =
+                    Utils.ScaleNoise(
+                        MineDirtGame.Noise.GetNoise(Position.X + x, Position.Z + z),
+                        0.25f,
+                        0.75f
+                    ) * Chunk.Height;
                 int maxHeight = MathHelper.Clamp((int)Math.Round(noiseValue), 1, Chunk.Height - 1);
 
                 for (int y = 0; y < Size; y++)
@@ -59,30 +63,34 @@ public class Subchunk
                     {
                         // Bedrock at the bottom layer
                         //ChunkBlocks.Add(blockPosition, Blocks.Bedrock(blockPosition));
-                        Blocks.Add(blockPosition, BlockType.Bedrock);
+                        Blocks[x * Size * Size + y * Size + z] = BlockType.Bedrock;
+                        BlockCount++;
                     }
                     else if (worldBlockPosition.Y < maxHeight - 10)
                     {
                         // Stone below the surface
                         //ChunkBlocks.Add(blockPosition, Blocks.Stone(blockPosition));
-                        Blocks.Add(blockPosition, BlockType.Stone);
+                        Blocks[x * Size * Size + y * Size + z] = BlockType.Stone;
+                        BlockCount++;
                     }
                     else if (worldBlockPosition.Y < maxHeight - 1)
                     {
                         // Dirt below the surface
                         //ChunkBlocks.Add(blockPosition, Blocks.Dirt(blockPosition));
-                        Blocks.Add(blockPosition, BlockType.Dirt);
+                        Blocks[x * Size * Size + y * Size + z] = BlockType.Dirt;
+                        BlockCount++;
                     }
                     else if (worldBlockPosition.Y == maxHeight - 1)
                     {
                         // Grass on the surface
                         //ChunkBlocks.Add(blockPosition, Blocks.Grass(blockPosition));
-                        Blocks.Add(blockPosition, BlockType.Grass);
+                        Blocks[x * Size * Size + y * Size + z] = BlockType.Grass;
+                        BlockCount++;
                     }
                     else
                     {
-                        // Air (no block) above the surface
-                        // Optionally skip adding blocks above the surface for optimization
+                        // Air above the surface
+                        Blocks[x * Size * Size + y * Size + z] = BlockType.Air;
                     }
                 }
             }
@@ -105,12 +113,12 @@ public class Subchunk
 
     public void GenerateBuffers()
     {
-        if (Blocks.Count == 0 || MineDirtGame.Graphics?.GraphicsDevice == null)
+        if (BlockCount <= 0 || MineDirtGame.Graphics?.GraphicsDevice == null)
             return;
 
         // Calculate total number of vertices and indices needed for the chunk
-        int totalVertices = Blocks.Count * 24;  // 24 vertices per block (6 faces, 4 vertices per face)
-        int totalIndices = Blocks.Count * 36;   // 36 indices per block (6 faces, 2 triangles per face)
+        int totalVertices = BlockCount * 24; // 24 vertices per block (6 faces, 4 vertices per face)
+        int totalIndices = BlockCount * 36; // 36 indices per block (6 faces, 2 triangles per face)
 
         // Create vertex and index arrays
         QuantizedVertex[] allVertices = new QuantizedVertex[totalVertices];
@@ -118,16 +126,29 @@ public class Subchunk
 
         ushort vertexOffset = 0;
         int indexOffset = 0;
+        Vector3 blockPos = new();
 
-        foreach (var block in Blocks)
+        for (int k = 0; k < Blocks.Length; k++)
         {
+            BlockType block = Blocks[k];
+            if (block == BlockType.Air)
+                continue;
+
+            blockPos.X = k / (Size * Size) % Size;
+            blockPos.Y = (k / Size) % Size;
+            blockPos.Z = k % (Size);
+
             for (byte faceIndex = 0; faceIndex < 6; faceIndex++)
             {
-                if (!IsFaceVisible(block.Key, faceDirections[faceIndex]))
+                if (!IsFaceVisible(blockPos, faceDirections[faceIndex]))
                     continue;
 
                 // Add the vertices and indices for this face
-                QuantizedVertex[] faceVertices = Block.GetFaceVertices(block.Value, faceIndex, block.Key + Position);
+                QuantizedVertex[] faceVertices = Block.GetFaceVertices(
+                    block,
+                    faceIndex,
+                    blockPos + Position
+                );
 
                 for (int i = 0; i < faceVertices.Length; i++)
                     allVertices[vertexOffset + i] = faceVertices[i];
@@ -144,10 +165,20 @@ public class Subchunk
         if (allVertices.Length == 0 || allIndices.Length == 0)
             return;
 
-        VertexBuffer = new VertexBuffer(MineDirtGame.Graphics.GraphicsDevice, typeof(QuantizedVertex), allVertices.Length, BufferUsage.WriteOnly);
+        VertexBuffer = new VertexBuffer(
+            MineDirtGame.Graphics.GraphicsDevice,
+            typeof(QuantizedVertex),
+            allVertices.Length,
+            BufferUsage.WriteOnly
+        );
         VertexBuffer.SetData(allVertices);
 
-        IndexBuffer = new IndexBuffer(MineDirtGame.Graphics.GraphicsDevice, IndexElementSize.SixteenBits, allIndices.Length, BufferUsage.WriteOnly);
+        IndexBuffer = new IndexBuffer(
+            MineDirtGame.Graphics.GraphicsDevice,
+            IndexElementSize.SixteenBits,
+            allIndices.Length,
+            BufferUsage.WriteOnly
+        );
         IndexBuffer.SetData(allIndices);
     }
 
@@ -164,9 +195,12 @@ public class Subchunk
 
         // Determine if neighbor position is out of bounds
         bool isOutOfBounds =
-            neighborPosition.X < 0 || neighborPosition.X >= Size ||
-            neighborPosition.Y < 0 || neighborPosition.Y >= Size ||
-            neighborPosition.Z < 0 || neighborPosition.Z >= Size;
+            neighborPosition.X < 0
+            || neighborPosition.X >= Size
+            || neighborPosition.Y < 0
+            || neighborPosition.Y >= Size
+            || neighborPosition.Z < 0
+            || neighborPosition.Z >= Size;
 
         if (isOutOfBounds)
         {
@@ -175,9 +209,10 @@ public class Subchunk
             Vector3 chunkPos = worldNeighborPos.ToChunkPosition();
 
             // Use the existing chunk if direction is in Y-axis (Z and X are zero)
-            Chunk chunk = (direction.Z == 0 && direction.X == 0)
-                ? Chunk
-                : World.Chunks.GetValueOrDefault(chunkPos);
+            Chunk chunk =
+                (direction.Z == 0 && direction.X == 0)
+                    ? Chunk
+                    : World.Chunks.GetValueOrDefault(chunkPos);
 
             if (chunk == null)
                 return false; // Neighbor chunk does not exist, face is visible
@@ -190,11 +225,15 @@ public class Subchunk
                 return true; // Neighbor subchunk does not exist, face is visible
 
             // Check if neighbor block exists in the neighboring subchunk
-            return !subchunk.Blocks.ContainsKey(subchunkNbPos);
+            return subchunk.Blocks[
+                    (int)(subchunkNbPos.X * Size * Size + subchunkNbPos.Y * Size + subchunkNbPos.Z)
+                ] == BlockType.Air;
         }
 
         // Check if neighbor block exists within the same subchunk
-        return !Blocks.ContainsKey(subchunkNbPos);
+        return Blocks[
+                (int)(subchunkNbPos.X * Size * Size + subchunkNbPos.Y * Size + subchunkNbPos.Z)
+            ] == BlockType.Air;
     }
 
     public void Draw(Effect effect)
