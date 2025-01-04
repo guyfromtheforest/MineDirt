@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using MineDirt;
 using MineDirt.Src;
+using MineDirt.Src.Noise;
 using System;
 using System.Collections.Generic;
 
@@ -44,8 +45,8 @@ public class Subchunk
         {
             for (int z = 0; z < Size; z++)
             {
-                float noiseValue = MineDirtGame.Noise.Generate(Position.X + x, Position.Z + z) * Chunk.Height; // Scale noise to desired height
-                int maxHeight = MathHelper.Clamp((int)Math.Round(noiseValue), 1, Chunk.Height * Size - 1);
+                float noiseValue = Utils.ScaleNoise(MineDirtGame.Noise.GetNoise(Position.X + x, Position.Z + z), 0.25f, 0.75f) * Chunk.Height;
+                int maxHeight = MathHelper.Clamp((int)Math.Round(noiseValue), 1, Chunk.Height - 1);
 
                 for (int y = 0; y < Size; y++)
                 {

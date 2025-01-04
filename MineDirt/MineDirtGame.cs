@@ -23,7 +23,7 @@ public class MineDirtGame : Game
 
     private SpriteBatch _spriteBatch;
 
-    public static Noise Noise = new(1234);
+    public static FastNoiseLite Noise = new(1234);
 
     BasicEffect effect;
     Effect blockShader;
@@ -59,6 +59,15 @@ public class MineDirtGame : Game
         Camera = new Camera3D(new Vector3(0, 10, 0), GraphicsDevice.Viewport.AspectRatio);
         World.Initialize();
 
+        // Set noise parameters
+        Noise.SetNoiseType(FastNoiseLite.NoiseType.Perlin);
+        Noise.SetFrequency(0.01f);
+        Noise.SetFractalType(FastNoiseLite.FractalType.FBm);
+        Noise.SetFractalOctaves(5);
+        Noise.SetFractalLacunarity(2.0f);
+        Noise.SetFractalGain(0.1f);
+        Noise.SetFractalWeightedStrength(0.2f);
+
 #if DEBUG
         debug.Initialize();
 #endif
@@ -87,6 +96,7 @@ public class MineDirtGame : Game
         // vertexShader.Parameters["UVScale"].SetValue(Vector2.One);
         blockShader.Parameters["TextureAtlas"].SetValue(TextureAtlas);
 
+        // Load the block textures
         Block.Load(BlockType.Dirt, [2]);
         Block.Load(BlockType.Grass, [1, 0, 2]);
         Block.Load(BlockType.Cobblestone, [3]);
