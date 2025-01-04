@@ -7,6 +7,8 @@ using MineDirt.Src.Noise;
 using System;
 using System.Collections.Generic;
 
+
+
 public class Subchunk
 {
     public static int Size { get; private set; } = 16;
@@ -15,7 +17,7 @@ public class Subchunk
     public Chunk Chunk { get; private set; }
     public VertexBuffer VertexBuffer { get; private set; }
     public IndexBuffer IndexBuffer { get; private set; }
-    
+
     public int VertexCount => VertexBuffer?.VertexCount ?? 0;
     public int IndexCount => IndexBuffer?.IndexCount ?? 0;
 
@@ -123,7 +125,7 @@ public class Subchunk
             {
                 if (!IsFaceVisible(block.Key, faceDirections[faceIndex]))
                     continue;
-                
+
                 // Add the vertices and indices for this face
                 QuantizedVertex[] faceVertices = Block.GetFaceVertices(block.Value, faceIndex, block.Key + Position);
 
@@ -152,51 +154,47 @@ public class Subchunk
     bool IsFaceVisible(Vector3 blockPosition, Vector3 direction)
     {
         Vector3 neighborPosition = blockPosition + direction;
-        Vector3 subchunkNbPos = new();
 
-        subchunkNbPos.X = (neighborPosition.X % Size + Size) % Size;
-        subchunkNbPos.Y = (neighborPosition.Y % Size + Size) % Size;
-        subchunkNbPos.Z = (neighborPosition.Z % Size + Size) % Size;
+        // Wrap neighbor position to subchunk bounds
+        Vector3 subchunkNbPos = new(
+            (neighborPosition.X % Size + Size) % Size,
+            (neighborPosition.Y % Size + Size) % Size,
+            (neighborPosition.Z % Size + Size) % Size
+        );
 
-        // Check if neighborPosition is out of the current subchunk bounds
+        // Determine if neighbor position is out of bounds
         bool isOutOfBounds =
             neighborPosition.X < 0 || neighborPosition.X >= Size ||
             neighborPosition.Y < 0 || neighborPosition.Y >= Size ||
-            neighborPosition.Z < 0|| neighborPosition.Z >= Size;
+            neighborPosition.Z < 0 || neighborPosition.Z >= Size;
 
         if (isOutOfBounds)
         {
-            // Calculate the chunk position in world coordinates
-            Vector3 chunkPos = (neighborPosition + Position).ToChunkPosition();
+            // Calculate world chunk position
+            Vector3 worldNeighborPos = neighborPosition + Position;
+            Vector3 chunkPos = worldNeighborPos.ToChunkPosition();
 
-            Chunk chunk; 
-            
-            if(direction.Z == 0 && direction.X == 0)
-                chunk = Chunk; 
-            else
-                chunk = World.Chunks.GetValueOrDefault(chunkPos);
+            // Use the existing chunk if direction is in Y-axis (Z and X are zero)
+            Chunk chunk = (direction.Z == 0 && direction.X == 0)
+                ? Chunk
+                : World.Chunks.GetValueOrDefault(chunkPos);
 
             if (chunk == null)
-            // TODO test this
                 return false; // Neighbor chunk does not exist, face is visible
 
-            // Calculate the subchunk position in world coordinates
-            Vector3 subchunkPos = (neighborPosition + Position).ToSubchunkPosition();
+            // Calculate subchunk position within the chunk
+            Vector3 subchunkPos = worldNeighborPos.ToSubchunkPosition();
             Subchunk subchunk = chunk.Subchunks.GetValueOrDefault(subchunkPos);
 
             if (subchunk == null)
                 return true; // Neighbor subchunk does not exist, face is visible
 
-            // Check if the neighbor block exists
-            if (subchunk.Blocks.TryGetValue(subchunkNbPos, out _))
-                return false; // Neighbor block exists, face is not visible
-        }
-        else if (Blocks.TryGetValue(subchunkNbPos, out _))
-        {
-            return false; // Neighbor block exists within the same subchunk
+            // Check if neighbor block exists in the neighboring subchunk
+            return !subchunk.Blocks.ContainsKey(subchunkNbPos);
         }
 
-        return true; // No neighbor block exists, face is visible
+        // Check if neighbor block exists within the same subchunk
+        return !Blocks.ContainsKey(subchunkNbPos);
     }
 
     public void Draw(Effect effect)
@@ -217,9 +215,9 @@ public class Subchunk
         {
             pass.Apply(); // Apply the pass to set up the shader
             MineDirtGame.Graphics.GraphicsDevice.DrawIndexedPrimitives(
-                PrimitiveType.TriangleList, 
-                0, 
-                0, 
+                PrimitiveType.TriangleList,
+                0,
+                0,
                 IndexBuffer.IndexCount / 3
             );
         }

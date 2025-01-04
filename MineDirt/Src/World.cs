@@ -57,7 +57,8 @@ public static class World
                     chunksToKeep.Add(chunkPosition);
 
                     //  Add new chunk if it doesn't already exist
-                    AddChunk(chunkPosition);
+                    if (!Chunks.ContainsKey(chunkPosition))
+                        AddChunk(chunkPosition);
                 }
             }
         }
@@ -83,16 +84,15 @@ public static class World
     private static void AddChunk(Vector3 position)
     {
         // Check if the chunk already exists
-        if (!Chunks.ContainsKey(position))
-        {
-            // Add the new chunk without generating buffers
-            Chunk newChunk = new(position);
-            Chunks.TryAdd(position, newChunk);
 
-            // Add neighboring chunks
-            Vector3[] neighbors =
-            [
-                new Vector3(position.X - Subchunk.Size, position.Y, position.Z), // West
+        // Add the new chunk without generating buffers
+        Chunk newChunk = new(position);
+        Chunks.TryAdd(position, newChunk);
+
+        // Add neighboring chunks
+        Vector3[] neighbors =
+        [
+            new Vector3(position.X - Subchunk.Size, position.Y, position.Z), // West
                 new Vector3(position.X + Subchunk.Size, position.Y, position.Z), // East
                 new Vector3(position.X, position.Y, position.Z - Subchunk.Size), // South
                 new Vector3(position.X, position.Y, position.Z + Subchunk.Size), // North
@@ -102,52 +102,51 @@ public static class World
                 //new Vector3(position.X - Subchunk.Size, position.Y, position.Z - Subchunk.Size),  // South-West
             ];
 
-            foreach (var item in neighbors)
+        foreach (var item in neighbors)
+        {
+            if (Chunks.TryGetValue(item, out Chunk chunk))
             {
-                if (Chunks.TryGetValue(item, out Chunk chunk))
+                if (!chunk.IsUpdatingBuffers)
                 {
-                    if(!chunk.IsUpdatingBuffers)
-                    {
-                        chunk.IsUpdatingBuffers = true;
-                        WorldGenThread.EnqueueTask(chunk.GenerateSubchunkBuffers);
-                    }
+                    chunk.IsUpdatingBuffers = true;
+                    WorldGenThread.EnqueueTask(chunk.GenerateSubchunkBuffers);
                 }
             }
-
-            //foreach (Vector3 neighborPosition in neighbors)
-            //{
-            //    Chunk neighbourChunk;
-
-            //    if (!Chunks.ContainsKey(neighborPosition))
-            //    {
-            //        // Add the neighboring chunk without generating buffers
-            //        neighbourChunk = new(neighborPosition);
-            //        Chunks.TryAdd(neighborPosition, neighbourChunk);
-            //    }
-            //    else
-            //    {
-            //        neighbourChunk = Chunks[neighborPosition];
-            //    }
-
-            //    //neighbourChunk.HasUpdatedBuffers = false;
-
-            //    //if (HasAllNeighbours(neighborPosition))
-            //    //{
-            //    //    neighbourChunk.HasUpdatedBuffers = false;
-
-            //    //    Vector3[] neighboursNeighbours = [
-            //    //        new Vector3(neighborPosition.X - Subchunk.Size, neighborPosition.Y, neighborPosition.Z), // West
-            //    //        new Vector3(neighborPosition.X + Subchunk.Size, neighborPosition.Y, neighborPosition.Z), // East
-            //    //        new Vector3(neighborPosition.X, neighborPosition.Y, neighborPosition.Z - Subchunk.Size), // South
-            //    //        new Vector3(neighborPosition.X, neighborPosition.Y, neighborPosition.Z + Subchunk.Size),  // North
-            //    //    ];
-
-            //    //    foreach (Vector3 neighboursNeighbourPosition in neighboursNeighbours)
-            //    //        if (Chunks.TryGetValue(neighboursNeighbourPosition, out Chunk value) && HasAllNeighbours(neighboursNeighbourPosition))
-            //    //            value.HasUpdatedBuffers = false;
-            //    //}
-            //}
         }
+
+        //foreach (Vector3 neighborPosition in neighbors)
+        //{
+        //    Chunk neighbourChunk;
+
+        //    if (!Chunks.ContainsKey(neighborPosition))
+        //    {
+        //        // Add the neighboring chunk without generating buffers
+        //        neighbourChunk = new(neighborPosition);
+        //        Chunks.TryAdd(neighborPosition, neighbourChunk);
+        //    }
+        //    else
+        //    {
+        //        neighbourChunk = Chunks[neighborPosition];
+        //    }
+
+        //    //neighbourChunk.HasUpdatedBuffers = false;
+
+        //    //if (HasAllNeighbours(neighborPosition))
+        //    //{
+        //    //    neighbourChunk.HasUpdatedBuffers = false;
+
+        //    //    Vector3[] neighboursNeighbours = [
+        //    //        new Vector3(neighborPosition.X - Subchunk.Size, neighborPosition.Y, neighborPosition.Z), // West
+        //    //        new Vector3(neighborPosition.X + Subchunk.Size, neighborPosition.Y, neighborPosition.Z), // East
+        //    //        new Vector3(neighborPosition.X, neighborPosition.Y, neighborPosition.Z - Subchunk.Size), // South
+        //    //        new Vector3(neighborPosition.X, neighborPosition.Y, neighborPosition.Z + Subchunk.Size),  // North
+        //    //    ];
+
+        //    //    foreach (Vector3 neighboursNeighbourPosition in neighboursNeighbours)
+        //    //        if (Chunks.TryGetValue(neighboursNeighbourPosition, out Chunk value) && HasAllNeighbours(neighboursNeighbourPosition))
+        //    //            value.HasUpdatedBuffers = false;
+        //    //}
+        //}
     }
 
     private static void GenerateBuffers()

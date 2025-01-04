@@ -39,8 +39,8 @@ public static class Block
             return [
             // Front face (using the side texture)
             new QuantizedVertex(positions[0], textures[blockType][0][0]), // top-left
-            new QuantizedVertex(positions[1], textures[blockType][0][1]),  // top-right
             new QuantizedVertex(positions[2], textures[blockType][0][2]), // bottom-left
+            new QuantizedVertex(positions[1], textures[blockType][0][1]),  // top-right
             new QuantizedVertex(positions[3], textures[blockType][0][3]),  // bottom-right
 
             // Back face (using the side texture)
@@ -57,8 +57,8 @@ public static class Block
 
             // Right face (using the side texture)
             new QuantizedVertex(positions[1], textures[blockType][0][0]),  // top-left
-            new QuantizedVertex(positions[5], textures[blockType][0][1]),   // top-right
             new QuantizedVertex(positions[3], textures[blockType][0][2]),  // bottom-left
+            new QuantizedVertex(positions[5], textures[blockType][0][1]),   // top-right
             new QuantizedVertex(positions[7], textures[blockType][0][3]),   // bottom-right
 
             // Top face (using the top texture)
@@ -69,8 +69,8 @@ public static class Block
 
             // Bottom face (using the bottom texture)
             new QuantizedVertex(positions[2], textures[blockType][0][0]), // top-left
-            new QuantizedVertex(positions[3], textures[blockType][0][1]),  // top-right
             new QuantizedVertex(positions[6], textures[blockType][0][2]),  // bottom-left
+            new QuantizedVertex(positions[3], textures[blockType][0][1]),  // top-right
             new QuantizedVertex(positions[7], textures[blockType][0][3])    // bottom-right
         ];
 
@@ -78,8 +78,8 @@ public static class Block
             return [
             // Front face (using the side texture)
             new QuantizedVertex(positions[0], textures[blockType][0][0]), // top-left
-            new QuantizedVertex(positions[1], textures[blockType][0][1]),  // top-right
             new QuantizedVertex(positions[2], textures[blockType][0][2]), // bottom-left
+            new QuantizedVertex(positions[1], textures[blockType][0][1]),  // top-right
             new QuantizedVertex(positions[3], textures[blockType][0][3]),  // bottom-right
 
             // Back face (using the side texture)
@@ -96,8 +96,8 @@ public static class Block
 
             // Right face (using the side texture)
             new QuantizedVertex(positions[1], textures[blockType][0][0]),  // top-left
-            new QuantizedVertex(positions[5], textures[blockType][0][1]),   // top-right
             new QuantizedVertex(positions[3], textures[blockType][0][2]),  // bottom-left
+            new QuantizedVertex(positions[5], textures[blockType][0][1]),   // top-right
             new QuantizedVertex(positions[7], textures[blockType][0][3]),   // bottom-right
 
             // Top face (using the top texture)
@@ -108,8 +108,8 @@ public static class Block
 
             // Bottom face (using the bottom texture)
             new QuantizedVertex(positions[2], textures[blockType][1][0]), // top-left
-            new QuantizedVertex(positions[3], textures[blockType][1][1]),  // top-right
             new QuantizedVertex(positions[6], textures[blockType][1][2]),  // bottom-left
+            new QuantizedVertex(positions[3], textures[blockType][1][1]),  // top-right
             new QuantizedVertex(positions[7], textures[blockType][1][3])    // bottom-right
         ];
 
@@ -117,8 +117,8 @@ public static class Block
             return [
             // Front face (using the side texture)
             new QuantizedVertex(positions[0], textures[blockType][0][0]), // top-left
-            new QuantizedVertex(positions[1], textures[blockType][0][1]),  // top-right
             new QuantizedVertex(positions[2], textures[blockType][0][2]), // bottom-left
+            new QuantizedVertex(positions[1], textures[blockType][0][1]),  // top-right
             new QuantizedVertex(positions[3], textures[blockType][0][3]),  // bottom-right
 
             // Back face (using the side texture)
@@ -135,8 +135,8 @@ public static class Block
 
             // Right face (using the side texture)
             new QuantizedVertex(positions[1], textures[blockType][0][0]),  // top-left
-            new QuantizedVertex(positions[5], textures[blockType][0][1]),   // top-right
             new QuantizedVertex(positions[3], textures[blockType][0][2]),  // bottom-left
+            new QuantizedVertex(positions[5], textures[blockType][0][1]),   // top-right
             new QuantizedVertex(positions[7], textures[blockType][0][3]),   // bottom-right
 
             // Top face (using the top texture)
@@ -147,16 +147,16 @@ public static class Block
 
             // Bottom face (using the bottom texture)
             new QuantizedVertex(positions[2], textures[blockType][2][0]), // top-left
-            new QuantizedVertex(positions[3], textures[blockType][2][1]),  // top-right
             new QuantizedVertex(positions[6], textures[blockType][2][2]),  // bottom-left
+            new QuantizedVertex(positions[3], textures[blockType][2][1]),  // top-right
             new QuantizedVertex(positions[7], textures[blockType][2][3])    // bottom-right
         ];
 
         return [
             // Front face (using the side texture)
             new QuantizedVertex(positions[0], textures[blockType][0][0]), // top-left
-            new QuantizedVertex(positions[1], textures[blockType][0][1]),  // top-right
             new QuantizedVertex(positions[2], textures[blockType][0][2]), // bottom-left
+            new QuantizedVertex(positions[1], textures[blockType][0][1]),  // top-right
             new QuantizedVertex(positions[3], textures[blockType][0][3]),  // bottom-right
 
             // Back face (using the side texture)
@@ -173,8 +173,8 @@ public static class Block
 
             // Right face (using the side texture)
             new QuantizedVertex(positions[1], textures[blockType][3][0]),  // top-left
-            new QuantizedVertex(positions[5], textures[blockType][3][1]),   // top-right
             new QuantizedVertex(positions[3], textures[blockType][3][2]),  // bottom-left
+            new QuantizedVertex(positions[5], textures[blockType][3][1]),   // top-right
             new QuantizedVertex(positions[7], textures[blockType][3][3]),   // bottom-right
 
             // Top face (using the top texture)
@@ -185,8 +185,8 @@ public static class Block
 
             // Bottom face (using the bottom texture)
             new QuantizedVertex(positions[2], textures[blockType][5][0]), // top-left
-            new QuantizedVertex(positions[3], textures[blockType][5][1]),  // top-right
             new QuantizedVertex(positions[6], textures[blockType][5][2]),  // bottom-left
+            new QuantizedVertex(positions[3], textures[blockType][5][1]),  // top-right
             new QuantizedVertex(positions[7], textures[blockType][5][3])    // bottom-right
         ];
     }

@@ -51,7 +51,7 @@ public class Debug
     private RasterizerState defaultRasterizeState = new()
     {
         FillMode = FillMode.Solid,
-        CullMode = CullMode.None,
+        CullMode = CullMode.CullCounterClockwiseFace,
     };
 
     public void Initialize()

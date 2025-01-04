@@ -56,12 +56,12 @@ public class MineDirtGame : Game
 
     protected override void Initialize()
     {
-        Camera = new Camera3D(new Vector3(0, 10, 0), GraphicsDevice.Viewport.AspectRatio);
+        Camera = new Camera3D(new Vector3(0, 100, 0), GraphicsDevice.Viewport.AspectRatio);
         World.Initialize();
 
         // Set noise parameters
         Noise.SetNoiseType(FastNoiseLite.NoiseType.Perlin);
-        Noise.SetFrequency(0.01f);
+        Noise.SetFrequency(0.02f);
         Noise.SetFractalType(FastNoiseLite.FractalType.FBm);
         Noise.SetFractalOctaves(5);
         Noise.SetFractalLacunarity(2.0f);
