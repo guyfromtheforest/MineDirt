@@ -13,6 +13,12 @@
 
 #---------------------------------- Content ---------------------------------#
 
+#begin Shaders/BlockShader.fx
+/importer:EffectImporter
+/processor:EffectProcessor
+/processorParam:DebugMode=Auto
+/build:Shaders/BlockShader.fx
+
 #begin Textures/Blocks.png
 /importer:TextureImporter
 /processor:TextureProcessor

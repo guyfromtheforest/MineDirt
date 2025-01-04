@@ -40,57 +40,57 @@ public class Subchunk
 
     private void GenerateBlocks()
     {
-        for (int x = 0; x < Size; x++)
-        {
-            for (int z = 0; z < Size; z++)
-            {
-                float noiseValue = MineDirtGame.Noise.Generate(Position.X + x, Position.Z + z) * Chunk.Height; // Scale noise to desired height
-                int maxHeight = MathHelper.Clamp((int)Math.Round(noiseValue), 1, Chunk.Height * Size - 1);
-
-                for (int y = 0; y < Size; y++)
-                {
-                    Vector3 blockPosition = Position + new Vector3(x, y, z);
-
-                    if (blockPosition.Y == 0)
-                    {
-                        // Bedrock at the bottom layer
-                        ChunkBlocks.Add(blockPosition, Blocks.Bedrock(blockPosition));
-                    }
-                    else if (blockPosition.Y < maxHeight - 10)
-                    {
-                        // Stone below the surface
-                        ChunkBlocks.Add(blockPosition, Blocks.Stone(blockPosition));
-                    }
-                    else if (blockPosition.Y < maxHeight - 1)
-                    {
-                        // Dirt below the surface
-                        ChunkBlocks.Add(blockPosition, Blocks.Dirt(blockPosition));
-                    }
-                    else if (blockPosition.Y == maxHeight - 1)
-                    {
-                        // Grass on the surface
-                        ChunkBlocks.Add(blockPosition, Blocks.Grass(blockPosition));
-                    }
-                    else
-                    {
-                        // Air (no block) above the surface
-                        // Optionally skip adding blocks above the surface for optimization
-                    }
-                }
-            }
-        }
-
-        //int l = 1;
-        //for (int i = 0; i < l; i++)
+        //for (int x = 0; x < Size; x++)
         //{
-        //    for (int j = 0; j < l; j++)
+        //    for (int z = 0; z < Size; z++)
         //    {
-        //        for (int k = 0; k < l; k++)
+        //        float noiseValue = MineDirtGame.Noise.Generate(Position.X + x, Position.Z + z) * Chunk.Height; // Scale noise to desired height
+        //        int maxHeight = MathHelper.Clamp((int)Math.Round(noiseValue), 1, Chunk.Height * Size - 1);
+
+        //        for (int y = 0; y < Size; y++)
         //        {
-        //            ChunkBlocks.Add(new Vector3(i, j, k), Blocks.Stone(new Vector3(i, j, k)));
+        //            Vector3 blockPosition = Position + new Vector3(x, y, z);
+
+        //            if (blockPosition.Y == 0)
+        //            {
+        //                // Bedrock at the bottom layer
+        //                ChunkBlocks.Add(blockPosition, Blocks.Bedrock(blockPosition));
+        //            }
+        //            else if (blockPosition.Y < maxHeight - 10)
+        //            {
+        //                // Stone below the surface
+        //                ChunkBlocks.Add(blockPosition, Blocks.Stone(blockPosition));
+        //            }
+        //            else if (blockPosition.Y < maxHeight - 1)
+        //            {
+        //                // Dirt below the surface
+        //                ChunkBlocks.Add(blockPosition, Blocks.Dirt(blockPosition));
+        //            }
+        //            else if (blockPosition.Y == maxHeight - 1)
+        //            {
+        //                // Grass on the surface
+        //                ChunkBlocks.Add(blockPosition, Blocks.Grass(blockPosition));
+        //            }
+        //            else
+        //            {
+        //                // Air (no block) above the surface
+        //                // Optionally skip adding blocks above the surface for optimization
+        //            }
         //        }
         //    }
         //}
+
+        int l = 1;
+        for (int i = 0; i < l; i++)
+        {
+            for (int j = 0; j < l; j++)
+            {
+                for (int k = 0; k < l; k++)
+                {
+                    ChunkBlocks.Add(new Vector3(i, j, k), Blocks.Stone(new Vector3(i, j, k)));
+                }
+            }
+        }
     }
 
     public void GenerateBuffers()
@@ -103,30 +103,30 @@ public class Subchunk
         int totalIndices = ChunkBlocks.Count * 36;   // 36 indices per block (6 faces, 2 triangles per face)
 
         // Create vertex and index arrays
-        VertexPositionTexture[] allVertices = new VertexPositionTexture[totalVertices];
-        int[] allIndices = new int[totalIndices];
+        QuantizedVertex[] allVertices = new QuantizedVertex[totalVertices];
+        ushort[] allIndices = new ushort[totalIndices];
 
-        int vertexOffset = 0;
+        ushort vertexOffset = 0;
         int indexOffset = 0;
 
         foreach (KeyValuePair<Vector3, Block> block in ChunkBlocks)
         {
-            for (int faceIndex = 0; faceIndex < 6; faceIndex++)
+            for (byte faceIndex = 0; faceIndex < 6; faceIndex++)
             {
-                if (IsFaceVisible(block.Key, faceDirections[faceIndex]))
-                {
-                    // Add the vertices and indices for this face
-                    VertexPositionTexture[] faceVertices = block.Value.GetFaceVertices(faceIndex, block.Key);
+                if (!IsFaceVisible(block.Key, faceDirections[faceIndex]))
+                    continue;
+                
+                // Add the vertices and indices for this face
+                QuantizedVertex[] faceVertices = block.Value.GetFaceVertices(faceIndex, block.Key);
 
-                    for (int i = 0; i < faceVertices.Length; i++)
-                        allVertices[vertexOffset + i] = faceVertices[i];
+                for (int i = 0; i < faceVertices.Length; i++)
+                    allVertices[vertexOffset + i] = faceVertices[i];
 
-                    for (int i = 0; i < Block.Indices.Length; i++)
-                        allIndices[indexOffset + i] = Block.Indices[i] + vertexOffset;
+                for (byte i = 0; i < Block.Indices.Length; i++)
+                    allIndices[indexOffset + i] = (ushort)(Block.Indices[i] + vertexOffset);
 
-                    vertexOffset += faceVertices.Length;
-                    indexOffset += Block.Indices.Length;
-                }
+                vertexOffset += (ushort)faceVertices.Length;
+                indexOffset += Block.Indices.Length;
             }
         }
 
@@ -134,10 +134,10 @@ public class Subchunk
         if (allVertices.Length == 0 || allIndices.Length == 0)
             return;
 
-        VertexBuffer = new VertexBuffer(MineDirtGame.Graphics.GraphicsDevice, typeof(VertexPositionTexture), allVertices.Length, BufferUsage.WriteOnly);
+        VertexBuffer = new VertexBuffer(MineDirtGame.Graphics.GraphicsDevice, typeof(QuantizedVertex), allVertices.Length, BufferUsage.WriteOnly);
         VertexBuffer.SetData(allVertices);
 
-        IndexBuffer = new IndexBuffer(MineDirtGame.Graphics.GraphicsDevice, IndexElementSize.ThirtyTwoBits, allIndices.Length, BufferUsage.WriteOnly);
+        IndexBuffer = new IndexBuffer(MineDirtGame.Graphics.GraphicsDevice, IndexElementSize.SixteenBits, allIndices.Length, BufferUsage.WriteOnly);
         IndexBuffer.SetData(allIndices);
     }
 
@@ -186,24 +186,29 @@ public class Subchunk
         return true; // No neighbor block exists, face is visible
     }
 
-    public void Draw(BasicEffect effect)
+    public void Draw(Effect effect)
     {
         if (VertexCount == 0 || IndexCount == 0)
             return;
 
         // Set the texture for the chunk
-        effect.TextureEnabled = true;
-        effect.Texture = MineDirtGame.BlockTextures;
+        // effect.TextureEnabled = true;
+        // effect.Texture = MineDirtGame.BlockTextures;
 
         // Set the chunk's vertex buffer and index buffer
         MineDirtGame.Graphics.GraphicsDevice.SetVertexBuffer(VertexBuffer);
         MineDirtGame.Graphics.GraphicsDevice.Indices = IndexBuffer;
 
-        // Apply the effect and draw the chunk
+        // Apply the custom shader
         foreach (EffectPass pass in effect.CurrentTechnique.Passes)
         {
-            pass.Apply();
-            MineDirtGame.Graphics.GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, IndexBuffer.IndexCount / 3);
+            pass.Apply(); // Apply the pass to set up the shader
+            MineDirtGame.Graphics.GraphicsDevice.DrawIndexedPrimitives(
+                PrimitiveType.TriangleList, 
+                0, 
+                0, 
+                IndexBuffer.IndexCount / 3
+            );
         }
     }
 }

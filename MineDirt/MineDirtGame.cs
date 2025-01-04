@@ -19,13 +19,14 @@ public class MineDirtGame : Game
     public static bool IsMouseCursorVisible = false;
 
     public static Camera3D Camera;
-    public static Texture2D BlockTextures;
+    public static Texture2D TextureAtlas;
 
     private SpriteBatch _spriteBatch;
 
     public static Noise Noise = new(1234);
 
     BasicEffect effect;
+    Effect blockShader;
     
     Chunk chunk;
 
@@ -68,17 +69,22 @@ public class MineDirtGame : Game
     {
         _spriteBatch = new SpriteBatch(GraphicsDevice);
 
-        BlockTextures = Content.Load<Texture2D>("Textures/Blocks");
+        blockShader = Content.Load<Effect>("Shaders/BlockShader");
+        TextureAtlas = Content.Load<Texture2D>("Textures/Blocks");
 
         // Initialize the BasicEffect
         effect = new BasicEffect(GraphicsDevice)
         {
             VertexColorEnabled = false, // Disable color shading
             TextureEnabled = true,      // Enable texture mapping
-            Texture = BlockTextures,     // Set the loaded texture
+            Texture = TextureAtlas,     // Set the loaded texture
             View = Matrix.CreateLookAt(new Vector3(0, 0, 0), Vector3.Zero, Vector3.Up),
             Projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 0.1f, 100f)
         };
+
+        blockShader.Parameters["WorldViewProjection"].SetValue(Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 0.1f, 100f));
+        // vertexShader.Parameters["PositionScale"].SetValue(Vector3.One);
+        // vertexShader.Parameters["UVScale"].SetValue(Vector2.One);
 
 #if DEBUG
         debug.LoadContent();
@@ -120,7 +126,10 @@ public class MineDirtGame : Game
         effect.View = Camera.View;
         effect.Projection = Camera.Projection;
 
-        World.DrawChunks(effect);
+        blockShader.Parameters["WorldViewProjection"].SetValue(Camera.View * Camera.Projection);
+        blockShader.Parameters["TextureAtlas"].SetValue(TextureAtlas);
+
+        World.DrawChunks(blockShader);
         //chunk.Draw(effect);
 
         base.Draw(gameTime);

@@ -53,7 +53,7 @@ public class Chunk
         UpdateCount++;
     }   
 
-    public void Draw(BasicEffect effect)
+    public void Draw(Effect effect)
     {
         foreach (var item in Subchunks)
             item.Value.Draw(effect);

@@ -28,56 +28,56 @@ public static class World
 
     public static void UpdateChunks()
     {
-        Vector3 cameraPosition = MineDirtGame.Camera.Position;
-        int chunkSize = Subchunk.Size; // Assuming Subchunk.Size is 16
-        float renderDistanceSquared = RenderDistance * RenderDistance * chunkSize * chunkSize;  // Square of the radius to avoid sqrt calculation
+        //Vector3 cameraPosition = MineDirtGame.Camera.Position;
+        //int chunkSize = Subchunk.Size; // Assuming Subchunk.Size is 16
+        //float renderDistanceSquared = RenderDistance * RenderDistance * chunkSize * chunkSize;  // Square of the radius to avoid sqrt calculation
 
         // HashSet for efficient chunk presence checks
-        HashSet<Vector3> chunksToKeep = new();
+        //HashSet<Vector3> chunksToKeep = new();
 
         // Loop through chunks within the render distance (in terms of chunk count, not world units)
-        for (int x = -RenderDistance; x <= RenderDistance; x++)
-        {
-            for (int z = -RenderDistance; z <= RenderDistance; z++)
-            {
-                // Calculate the chunk's world position based on the camera's position and chunk size
-                Vector3 chunkPosition = new(
-                    (int)(Math.Floor(cameraPosition.X / chunkSize) + x) * chunkSize,
-                    0, // Assuming Y is always 0 for simplicity
-                    (int)(Math.Floor(cameraPosition.Z / chunkSize) + z) * chunkSize
-                );
+        //for (int x = -RenderDistance; x <= RenderDistance; x++)
+        //{
+        //    for (int z = -RenderDistance; z <= RenderDistance; z++)
+        //    {
+        //         Calculate the chunk's world position based on the camera's position and chunk size
+        //        Vector3 chunkPosition = new(
+        //            (int)(Math.Floor(cameraPosition.X / chunkSize) + x) * chunkSize,
+        //            0, // Assuming Y is always 0 for simplicity
+        //            (int)(Math.Floor(cameraPosition.Z / chunkSize) + z) * chunkSize
+        //        );
 
-                Vector3 chunkCenter = chunkPosition + new Vector3(chunkSize / 2, 0, chunkSize / 2);
-                float distanceSquared = Vector3.DistanceSquared(
-                    new Vector3(cameraPosition.X, 0, cameraPosition.Z),
-                    chunkCenter
-                );
+        //        Vector3 chunkCenter = chunkPosition + new Vector3(chunkSize / 2, 0, chunkSize / 2);
+        //        float distanceSquared = Vector3.DistanceSquared(
+        //            new Vector3(cameraPosition.X, 0, cameraPosition.Z),
+        //            chunkCenter
+        //        );
 
-                // If the chunk is within the render distance (in squared distance to avoid sqrt)
-                if (distanceSquared <= renderDistanceSquared + 1)
-                {
-                    chunksToKeep.Add(chunkPosition);
+        //         If the chunk is within the render distance (in squared distance to avoid sqrt)
+        //        if (distanceSquared <= renderDistanceSquared + 1)
+        //        {
+        //            chunksToKeep.Add(chunkPosition);
 
-                    // Add new chunk if it doesn't already exist
-                    AddChunk(chunkPosition);
-                }
-            }
-        }
+        //             Add new chunk if it doesn't already exist
+        //            AddChunk(chunkPosition);
+        //        }
+        //    }
+        //}
 
         // Remove chunks outside the render distance
-        foreach (var item in Chunks.Keys)
-            if (!chunksToKeep.Contains(item))
-                Chunks.Remove(item, out _);
+        //foreach (var item in Chunks.Keys)
+        //    if (!chunksToKeep.Contains(item))
+        //        Chunks.Remove(item, out _);
 
-        //Vector3[] positions = [
-        //    new(0, 0, 0),
-        //    new(16, 0, 0),
-        //    new(0, 0, 16),
-        //    new(16, 0, 16),
-        //];
+        Vector3[] positions = [
+            new(0, 0, 0),
+            //new(16, 0, 0),
+            //new(0, 0, 16),
+            //new(16, 0, 16),
+        ];
 
-        //foreach (var position in positions)
-        //    AddChunk(position);
+        foreach (var position in positions)
+            AddChunk(position);
 
         GenerateBuffers();
     }
@@ -173,10 +173,10 @@ public static class World
         return true;
     }
 
-    public static void DrawChunks(BasicEffect effect)
+    public static void DrawChunks(Effect effect)
     {
         // Get the camera's frustum
-        BoundingFrustum frustum = new(effect.View * effect.Projection);
+        BoundingFrustum frustum = new(MineDirtGame.Camera.View * MineDirtGame.Camera.Projection);
 
         foreach (var chunk in Chunks.Values)
         {
