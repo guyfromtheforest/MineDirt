@@ -129,13 +129,9 @@ public class Subchunk
         if (BlockCount <= 0 || MineDirtGame.Graphics?.GraphicsDevice == null)
             return;
 
-        // Calculate total number of vertices and indices needed for the chunk
-        int totalVertices = BlockCount * 24; // 24 vertices per block (6 faces, 4 vertices per face)
-        int totalIndices = BlockCount * 36; // 36 indices per block (6 faces, 2 triangles per face)
-
         // Create vertex and index arrays
-        QuantizedVertex[] allVertices = new QuantizedVertex[totalVertices];
-        int[] allIndices = new int[totalIndices];
+        List<QuantizedVertex> allVertices = [];
+        List<int> allIndices = [];
 
         int vertexOffset = 0;
         int indexOffset = 0;
@@ -165,10 +161,10 @@ public class Subchunk
                 );
 
                 for (int i = 0; i < faceVertices.Length; i++)
-                    allVertices[vertexOffset + i] = faceVertices[i];
+                    allVertices.Add(faceVertices[i]);
 
                 for (byte i = 0; i < BlockRendering.Indices.Length; i++)
-                    allIndices[indexOffset + i] = BlockRendering.Indices[i] + vertexOffset;
+                    allIndices.Add(BlockRendering.Indices[i] + vertexOffset);
 
                 vertexOffset += faceVertices.Length;
                 indexOffset += BlockRendering.Indices.Length;
@@ -182,24 +178,24 @@ public class Subchunk
         }
 
         // Create the buffers
-        if (allVertices.Length == 0 || allIndices.Length == 0)
+        if (allVertices.Count == 0 || allIndices.Count == 0)
             return;
 
         VertexBuffer = new VertexBuffer(
             MineDirtGame.Graphics.GraphicsDevice,
             typeof(QuantizedVertex),
-            allVertices.Length,
+            allVertices.Count,
             BufferUsage.WriteOnly
         );
-        VertexBuffer.SetData(allVertices);
+        VertexBuffer.SetData(allVertices.ToArray());
 
         IndexBuffer = new IndexBuffer(
             MineDirtGame.Graphics.GraphicsDevice,
             IndexElementSize.ThirtyTwoBits,
-            allIndices.Length,
+            allIndices.Count,
             BufferUsage.WriteOnly
         );
-        IndexBuffer.SetData(allIndices);
+        IndexBuffer.SetData(allIndices.ToArray());
     }
 
     bool IsFaceVisible(ushort blockIndex, short direction)
