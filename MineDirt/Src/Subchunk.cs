@@ -44,29 +44,29 @@ public class Subchunk
 
     private void GenerateBlocks()
     {
-        for (int i = 0; i < l; i++)
-        {
-            for (int j = 0; j < m; j++)
-            {
-                for (int k = 0; k < n; k++)
-                {
-                    Block block = new();
+        //for (int i = 0; i < l; i++)
+        //{
+        //    for (int j = 0; j < m; j++)
+        //    {
+        //        for (int k = 0; k < n; k++)
+        //        {
+        //            Block block = new();
 
-                    block.Type = BlockType.Grass;
-                    block.SetBlockOpacity(true);
+        //            block.Type = BlockType.Grass;
+        //            block.SetBlockOpacity(true);
 
-                    int blockIndex = GetIndexFromX(i) + GetIndexFromY(j) + GetIndexFromZ(k);
+        //            int blockIndex = GetIndexFromX(i) + GetIndexFromY(j) + GetIndexFromZ(k);
 
-                    Blocks[blockIndex] = block;
-                    BlockCount++;
-                }
-            }
-        }
+        //            Blocks[blockIndex] = block;
+        //            BlockCount++;
+        //        }
+        //    }
+        //}
 
-        l = 0;
-        m = 0;
-        n = 0;
-        return;
+        //l = 0;
+        //m = 0;
+        //n = 0;
+        //return;
 
         for (byte x = 0; x < Size; x++)
         {
@@ -200,7 +200,6 @@ public class Subchunk
 
     bool IsFaceVisible(ushort blockIndex, short direction)
     {
-        //return true;
         int unwrappedNbIndex = blockIndex + direction;
         int unwX = GetXFromIndex(blockIndex) + GetXFromIndex(direction);
         int unwY = GetYFromIndex(blockIndex) + GetYFromIndex(direction);

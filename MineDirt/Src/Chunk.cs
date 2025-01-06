@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 public class Chunk
 {
-    public static int Height { get; private set; } = Subchunk.Size; // Max chunk size
+    public static int Height { get; private set; } = 4 * Subchunk.Size; // Max chunk size
     public Vector3 Position { get; private set; }
 
     public long VertexCount => Subchunks.Values.ToList().Sum(subchunk => subchunk.VertexCount);
