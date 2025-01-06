@@ -97,11 +97,11 @@ public class MineDirtGame : Game
         blockShader.Parameters["TextureAtlas"].SetValue(TextureAtlas);
 
         // Load the block textures
-        Block.Load(BlockType.Dirt, [2]);
-        Block.Load(BlockType.Grass, [1, 0, 2]);
-        Block.Load(BlockType.Cobblestone, [3]);
-        Block.Load(BlockType.Bedrock, [4]);
-        Block.Load(BlockType.Stone, [5]);
+        BlockRendering.Load(BlockType.Dirt, [2]);
+        BlockRendering.Load(BlockType.Grass, [1, 0, 2]);
+        BlockRendering.Load(BlockType.Cobblestone, [3]);
+        BlockRendering.Load(BlockType.Bedrock, [4]);
+        BlockRendering.Load(BlockType.Stone, [5]);
 
 #if DEBUG
         debug.LoadContent();
