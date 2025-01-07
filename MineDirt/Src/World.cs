@@ -19,18 +19,18 @@ public static class World
 
     public static void Initialize() { }
 
-    public static bool done = false;
+    // public static bool done = false;
 
     public static void UpdateChunks()
     {
-        Vector3[] positions = [new(0, 0, 0), new(16, 0, 0), new(0, 0, 16), new(16, 0, 16)];
+        //Vector3[] positions = [new(0, 0, 0), new(16, 0, 0), new(0, 0, 16), new(16, 0, 16)];
 
-        if (!done)
-            foreach (Vector3 position in positions)
-                AddChunk(position);
+        //if (!done)
+        //    foreach (Vector3 position in positions)
+        //        AddChunk(position);
 
-        done = true;
-        return;
+        //done = true;
+        //return;
 
         Vector3 cameraPosition = MineDirtGame.Camera.Position;
         int chunkSize = Subchunk.Size; // Assuming Subchunk.Size is 16
@@ -186,11 +186,11 @@ public static class World
             }
 
             block = default;
-            return true;
+            return false;
         }
 
         block = default;
-        return true;
+        return false;
     }
 
     public static bool TryGetBlock(Vector3 position, out Block block)

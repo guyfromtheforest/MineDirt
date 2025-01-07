@@ -20,7 +20,11 @@ public static class Extensions
         );
 
     public static Vector3 ToSubchunkRelativePosition(this Vector3 position) =>
-        new(position.X % Subchunk.Size, position.Y % Subchunk.Size, position.Z % Subchunk.Size);
+        new(
+            ((position.X % Subchunk.Size) + Subchunk.Size) % Subchunk.Size,
+            ((position.Y % Subchunk.Size) + Subchunk.Size) % Subchunk.Size,
+            ((position.Z % Subchunk.Size) + Subchunk.Size) % Subchunk.Size
+        );
 
     public static int ToIndex(this Vector3 position) =>
         Subchunk.GetIndexFromX((int)position.X)

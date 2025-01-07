@@ -37,9 +37,9 @@ public class Subchunk
         GenerateBlocks();
     }
 
-    int l = 16;
-    int m = 16;
-    int n = 16;
+    //int l = 16;
+    //int m = 16;
+    //int n = 16;
 
     private void GenerateBlocks()
     {
@@ -221,8 +221,14 @@ public class Subchunk
                 direction % Size
             );
 
+            Vector3 subchunkPos = Position + (subchunkDirection * Size);
+
+            // If the neighbor block is below bedrock level or build limit 
+            if (subchunkPos.Y >= Chunk.Height || subchunkPos.Y < 0)
+                return true;
+
             return World.TryGetBlock(
-                    Position + (subchunkDirection * Size),
+                    subchunkPos,
                     wrappedNbIndex,
                     out Block test
                 )
