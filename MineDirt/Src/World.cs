@@ -148,7 +148,7 @@ public static class World
         foreach (Chunk item in Chunks.Values)
         {
             if (!item.HasUpdatedBuffers)
-                WorldGenThread.EnqueueTask(item.GenerateSubchunkBuffers);
+                item.GenerateSubchunkBuffers();
         }
     }
 

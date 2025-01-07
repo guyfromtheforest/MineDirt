@@ -155,9 +155,9 @@ public class Debug
             ImGui.Text($"Indices: {indexCount}");
 
             // Display memory usage information in GB
-            ImGui.Text($"Working Set: {((double)workingSet / 1024 / 1024 / 1024):0.###} GB");
-            ImGui.Text($"Private Memory: {((double)privateMemory / 1024 / 1024 / 1024):0.###} GB");
-            ImGui.Text($"Virtual Memory: {((double)virtualMemory / 1024 / 1024 / 1024):0.###} GB");
+            ImGui.Text($"Working Set: {(double)workingSet / 1024 / 1024 / 1024:0.###} GB");
+            ImGui.Text($"Private Memory: {(double)privateMemory / 1024 / 1024 / 1024:0.###} GB");
+            ImGui.Text($"Virtual Memory: {(double)virtualMemory / 1024 / 1024 / 1024:0.###} GB");
 
             // Checkbox 
             ImGui.Checkbox("Render Wireframes", ref RenderWireframes);
