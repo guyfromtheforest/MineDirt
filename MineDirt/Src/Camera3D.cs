@@ -1,11 +1,11 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks.Dataflow;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using MineDirt;
 using MineDirt.Src;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks.Dataflow;
 
 public class Camera3D
 {
@@ -190,7 +190,12 @@ public class Camera3D
         PointedBlock = default;
     }
 
-    public void DrawBoundingBox(BoundingBox box, GraphicsDevice graphicsDevice, BasicEffect effect, float offset = 0.001f)
+    public void DrawBoundingBox(
+        BoundingBox box,
+        GraphicsDevice graphicsDevice,
+        BasicEffect effect,
+        float offset = 0.001f
+    )
     {
         // Enable depth testing
         graphicsDevice.DepthStencilState = DepthStencilState.Default;
@@ -213,11 +218,11 @@ public class Camera3D
 
         // Define the edges of the bounding box
         int[] indices =
-        {
-        0, 1, 1, 2, 2, 3, 3, 0, // Bottom face
-        4, 5, 5, 6, 6, 7, 7, 4, // Top face
-        0, 4, 1, 5, 2, 6, 3, 7  // Vertical edges
-        };
+        [
+            0, 1, 1, 2, 2, 3, 3, 0, // Bottom face
+            4, 5, 5, 6, 6, 7, 7, 4, // Top face
+            0, 4, 1, 5, 2, 6, 3, 7, // Vertical edges
+        ];
 
         // Set up vertices for the edges
         VertexPositionColor[] vertices = new VertexPositionColor[offsetCorners.Length];
@@ -242,9 +247,5 @@ public class Camera3D
         );
     }
 
-
-    private void UpdateViewMatrix()
-    {
-        View = Matrix.CreateLookAt(Position, Position + Forward, Up);
-    }
+    private void UpdateViewMatrix() => View = Matrix.CreateLookAt(Position, Position + Forward, Up);
 }
