@@ -1,13 +1,14 @@
-﻿using ImGuiNET;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using ImGuiNET;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using System;
-using System.Diagnostics;
-using System.Collections.Generic;
 using MineDirt.Src;
 
 namespace MineDirt;
+
 public class MineDirtGame : Game
 {
 #if DEBUG
@@ -19,7 +20,10 @@ public class MineDirtGame : Game
     public static bool IsMouseCursorVisible = false;
 
     public static Camera3D Camera;
+
     public static Texture2D TextureAtlas;
+    public static Texture2D Crosshair;
+    public static Vector2 CrosshairPosition;
 
     private SpriteBatch _spriteBatch;
 
@@ -27,7 +31,7 @@ public class MineDirtGame : Game
 
     BasicEffect effect;
     Effect blockShader;
-    
+
     Chunk chunk;
 
     public MineDirtGame()
@@ -47,7 +51,7 @@ public class MineDirtGame : Game
         Graphics.IsFullScreen = true;
 
         // Set the resolution for fullscreen mode
-        Graphics.PreferredBackBufferWidth = 1920;  // Set your preferred width
+        Graphics.PreferredBackBufferWidth = 1920; // Set your preferred width
         Graphics.PreferredBackBufferHeight = 1080; // Set your preferred height
         Graphics.ApplyChanges();
 
@@ -80,20 +84,37 @@ public class MineDirtGame : Game
 
         blockShader = Content.Load<Effect>("Shaders/BlockShader");
         TextureAtlas = Content.Load<Texture2D>("Textures/Blocks");
+        Crosshair = Content.Load<Texture2D>("Textures/Crosshair");
+        CrosshairPosition = new Vector2(
+            GraphicsDevice.Viewport.Width / 2 - Crosshair.Width / 2,
+            GraphicsDevice.Viewport.Height / 2 - Crosshair.Height / 2
+        );
 
         // Initialize the BasicEffect
         effect = new BasicEffect(GraphicsDevice)
         {
             VertexColorEnabled = false, // Disable color shading
-            TextureEnabled = true,      // Enable texture mapping
-            Texture = TextureAtlas,     // Set the loaded texture
+            TextureEnabled = true, // Enable texture mapping
+            Texture = TextureAtlas, // Set the loaded texture
             View = Matrix.CreateLookAt(new Vector3(0, 0, 0), Vector3.Zero, Vector3.Up),
-            Projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 0.1f, 100f)
+            Projection = Matrix.CreatePerspectiveFieldOfView(
+                MathHelper.PiOver4,
+                GraphicsDevice.Viewport.AspectRatio,
+                0.1f,
+                100f
+            ),
         };
 
-        blockShader.Parameters["WorldViewProjection"].SetValue(Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 0.1f, 100f));
-        // vertexShader.Parameters["PositionScale"].SetValue(Vector3.One);
-        // vertexShader.Parameters["UVScale"].SetValue(Vector2.One);
+        blockShader
+            .Parameters["WorldViewProjection"]
+            .SetValue(
+                Matrix.CreatePerspectiveFieldOfView(
+                    MathHelper.PiOver4,
+                    GraphicsDevice.Viewport.AspectRatio,
+                    0.1f,
+                    100f
+                )
+            );
         blockShader.Parameters["TextureAtlas"].SetValue(TextureAtlas);
 
         // Load the block textures
@@ -110,7 +131,10 @@ public class MineDirtGame : Game
 
     protected override void Update(GameTime gameTime)
     {
-        if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
+        if (
+            GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed
+            || Keyboard.GetState().IsKeyDown(Keys.Escape)
+        )
             Exit();
 
         var keyboardState = Keyboard.GetState();
@@ -118,11 +142,10 @@ public class MineDirtGame : Game
 
         // Update the camera with the current input and GraphicsDevice for mouse centering
         Camera.Update(gameTime, keyboardState, mouseState, GraphicsDevice);
-
+        
         IsMouseVisible = IsMouseCursorVisible;
 
         World.UpdateChunks();
-        // chunk = new Chunk(new Vector3((float)Math.Floor(Camera.Position.X), 0, (float)Math.Floor(Camera.Position.Z)));
 
 #if DEBUG
         debug.Update(gameTime);
@@ -140,13 +163,27 @@ public class MineDirtGame : Game
         GraphicsDevice.SamplerStates[0] = SamplerState.PointClamp;
         GraphicsDevice.DepthStencilState = DepthStencilState.Default;
 
+
         effect.View = Camera.View;
         effect.Projection = Camera.Projection;
 
         blockShader.Parameters["WorldViewProjection"].SetValue(Camera.View * Camera.Projection);
 
         World.DrawChunks(blockShader);
-        //chunk.Draw(effect);
+
+        _spriteBatch.Begin();
+        _spriteBatch.Draw(Crosshair, CrosshairPosition, Color.White);
+        _spriteBatch.End();
+
+        if(Camera.PointedBlock.Type != BlockType.Air)
+        {
+            BoundingBox box = new(
+                Camera.PointedBlockPosition,
+                Camera.PointedBlockPosition + Vector3.One
+            );
+
+            Camera.DrawBoundingBox(box, GraphicsDevice, effect);
+        }
 
         base.Draw(gameTime);
 

@@ -24,63 +24,60 @@ public static class World
 
     public static void Initialize() { }
 
-    public static bool done = false; 
+    public static bool done = false;
+
     public static void UpdateChunks()
     {
-        //Vector3 cameraPosition = MineDirtGame.Camera.Position;
-        //int chunkSize = Subchunk.Size; // Assuming Subchunk.Size is 16
-        //float renderDistanceSquared = RenderDistance * RenderDistance * chunkSize * chunkSize; // Square of the radius to avoid sqrt calculation
+        Vector3[] positions = [new(0, 0, 0), new(16, 0, 0), new(0, 0, 16), new(16, 0, 16)];
 
-        //// HashSet for efficient chunk presence checks
-        //HashSet<Vector3> chunksToKeep = new();
+        if (!done)
+            foreach (var position in positions)
+                AddChunk(position);
 
-        //// Loop through chunks within the render distance (in terms of chunk count, not world units)
-        //for (int x = -RenderDistance; x <= RenderDistance; x++)
-        //{
-        //    for (int z = -RenderDistance; z <= RenderDistance; z++)
-        //    {
-        //        // Calculate the chunk's world position based on the camera's position and chunk size
-        //        Vector3 chunkPosition = new(
-        //            (int)(Math.Floor(cameraPosition.X / chunkSize) + x) * chunkSize,
-        //            0, // Assuming Y is always 0 for simplicity
-        //            (int)(Math.Floor(cameraPosition.Z / chunkSize) + z) * chunkSize
-        //        );
+        done = true;
+        return;
 
-        //        Vector3 chunkCenter = chunkPosition + new Vector3(chunkSize / 2, 0, chunkSize / 2);
-        //        float distanceSquared = Vector3.DistanceSquared(
-        //            new Vector3(cameraPosition.X, 0, cameraPosition.Z),
-        //            chunkCenter
-        //        );
+        Vector3 cameraPosition = MineDirtGame.Camera.Position;
+        int chunkSize = Subchunk.Size; // Assuming Subchunk.Size is 16
+        float renderDistanceSquared = RenderDistance * RenderDistance * chunkSize * chunkSize; // Square of the radius to avoid sqrt calculation
 
-        //        //If the chunk is within the render distance(in squared distance to avoid sqrt)
-        //        if (distanceSquared <= renderDistanceSquared + 1)
-        //        {
-        //            chunksToKeep.Add(chunkPosition);
+        // HashSet for efficient chunk presence checks
+        HashSet<Vector3> chunksToKeep = new();
 
-        //            //  Add new chunk if it doesn't already exist
-        //            if (!Chunks.ContainsKey(chunkPosition))
-        //                AddChunk(chunkPosition);
-        //        }
-        //    }
-        //}
+        // Loop through chunks within the render distance (in terms of chunk count, not world units)
+        for (int x = -RenderDistance; x <= RenderDistance; x++)
+        {
+            for (int z = -RenderDistance; z <= RenderDistance; z++)
+            {
+                // Calculate the chunk's world position based on the camera's position and chunk size
+                Vector3 chunkPosition = new(
+                    (int)(Math.Floor(cameraPosition.X / chunkSize) + x) * chunkSize,
+                    0, // Assuming Y is always 0 for simplicity
+                    (int)(Math.Floor(cameraPosition.Z / chunkSize) + z) * chunkSize
+                );
 
-        ////Remove chunks outside the render distance
-        //foreach (var item in Chunks.Keys)
-        //    if (!chunksToKeep.Contains(item))
-        //        Chunks.Remove(item, out _);
+                Vector3 chunkCenter = chunkPosition + new Vector3(chunkSize / 2, 0, chunkSize / 2);
+                float distanceSquared = Vector3.DistanceSquared(
+                    new Vector3(cameraPosition.X, 0, cameraPosition.Z),
+                    chunkCenter
+                );
 
-        Vector3[] positions = [
-            new(0, 0, 0),
-            new(16, 0, 0),
-            new(0, 0, 16),
-            new(16, 0, 16),
-        ];
+                //If the chunk is within the render distance(in squared distance to avoid sqrt)
+                if (distanceSquared <= renderDistanceSquared + 1)
+                {
+                    chunksToKeep.Add(chunkPosition);
 
-        if(!done)
-        foreach (var position in positions)
-            AddChunk(position);
+                    //  Add new chunk if it doesn't already exist
+                    if (!Chunks.ContainsKey(chunkPosition))
+                        AddChunk(chunkPosition);
+                }
+            }
+        }
 
-        done = true; 
+        //Remove chunks outside the render distance
+        foreach (var item in Chunks.Keys)
+            if (!chunksToKeep.Contains(item))
+                Chunks.Remove(item, out _);
     }
 
     private static void AddChunk(Vector3 position)
@@ -95,14 +92,14 @@ public static class World
         Vector3[] neighbors =
         [
             new Vector3(position.X - Subchunk.Size, 0, position.Z), // West
-                new Vector3(position.X + Subchunk.Size, 0, position.Z), // East
-                new Vector3(position.X, 0, position.Z - Subchunk.Size), // South
-                new Vector3(position.X, 0, position.Z + Subchunk.Size), // North
-                //new Vector3(position.X + Subchunk.Size, position.Y, position.Z + Subchunk.Size),  // North-East
-                //new Vector3(position.X - Subchunk.Size, position.Y, position.Z + Subchunk.Size),  // North-West
-                //new Vector3(position.X + Subchunk.Size, position.Y, position.Z - Subchunk.Size),  // South-East
-                //new Vector3(position.X - Subchunk.Size, position.Y, position.Z - Subchunk.Size),  // South-West
-            ];
+            new Vector3(position.X + Subchunk.Size, 0, position.Z), // East
+            new Vector3(position.X, 0, position.Z - Subchunk.Size), // South
+            new Vector3(position.X, 0, position.Z + Subchunk.Size), // North
+            //new Vector3(position.X + Subchunk.Size, position.Y, position.Z + Subchunk.Size),  // North-East
+            //new Vector3(position.X - Subchunk.Size, position.Y, position.Z + Subchunk.Size),  // North-West
+            //new Vector3(position.X + Subchunk.Size, position.Y, position.Z - Subchunk.Size),  // South-East
+            //new Vector3(position.X - Subchunk.Size, position.Y, position.Z - Subchunk.Size),  // South-West
+        ];
 
         foreach (var item in neighbors)
         {
@@ -115,8 +112,6 @@ public static class World
                 }
             }
         }
-
-        newChunk.GenerateSubchunkBuffers();
 
         //foreach (Vector3 neighborPosition in neighbors)
         //{
@@ -158,7 +153,7 @@ public static class World
         foreach (Chunk item in Chunks.Values)
         {
             if (!item.HasUpdatedBuffers)
-                item.GenerateSubchunkBuffers();
+                WorldGenThread.EnqueueTask(item.GenerateSubchunkBuffers);
         }
     }
 
@@ -193,10 +188,34 @@ public static class World
                 block = subchunkValue.Blocks[blockIndex];
 
                 return true;
-            } 
+            }
 
             block = default;
-            return true; 
+            return true;
+        }
+
+        block = default;
+        return true;
+    }
+
+    public static bool TryGetBlock(Vector3 position, out Block block)
+    {
+        if (Chunks.TryGetValue(position.ToChunkPosition(), out Chunk chunk))
+        {
+            if (
+                chunk.Subchunks.TryGetValue(
+                    position.ToSubchunkPosition(),
+                    out Subchunk subchunkValue
+                )
+            )
+            {
+                block = subchunkValue.Blocks[position.ToSubchunkRelativePosition().ToIndex()];
+
+                return true;
+            }
+
+            block = default;
+            return true;
         }
 
         block = default;

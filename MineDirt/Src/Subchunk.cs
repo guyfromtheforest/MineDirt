@@ -216,6 +216,44 @@ public class Subchunk
         // Determine if neighbor position is out of bounds
         if (isOutOfBounds)
         {
+            Vector3 pos = new(
+                blockIndex / (Size * Size) % Size,
+                blockIndex / Size % Size,
+                blockIndex % Size
+            );
+
+            Vector3 dir = new(
+                direction / (Size * Size),
+                direction / Size % Size,
+                direction % Size
+            );
+
+            Vector3 neighborPosition = new(
+                unwX,
+                unwY,
+                unwZ
+            );
+
+            // Calculate world chunk position
+            Vector3 worldNeighborPos = (dir + pos) + Position;
+            Vector3 chunkPos = worldNeighborPos.ToChunkPosition();
+
+            // Use the existing chunk if direction is in Y-axis (Z and X are zero)
+            Chunk chunk = World.Chunks.GetValueOrDefault(chunkPos);
+
+            if (chunk == null)
+                return true; // Neighbor chunk does not exist, face is visible
+
+            // Calculate subchunk position within the chunk
+            Vector3 subchunkPos = worldNeighborPos.ToSubchunkPosition();
+            Subchunk subchunk = chunk.Subchunks.GetValueOrDefault(subchunkPos);
+
+            if (subchunk == null)
+                return true; // Neighbor subchunk does not exist, face is visible
+
+            // Check if neighbor block exists in the neighboring subchunk
+            return subchunk.Blocks[wrappedNbIndex].Type == BlockType.Air;
+
             Vector3 subchunkDirection = new(
                 direction / (Size * Size) % Size,
                 direction / Size % Size,

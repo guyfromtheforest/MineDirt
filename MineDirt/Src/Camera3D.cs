@@ -2,6 +2,10 @@
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using MineDirt;
+using MineDirt.Src;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks.Dataflow;
 
 public class Camera3D
 {
@@ -19,15 +23,23 @@ public class Camera3D
     public float FieldOfView { get; set; } = MathHelper.PiOver4;
 
     public static float MovementSpeed { get; set; } = 20.0f;
+    public static float MaxMovementSpeed { get; } = 50.0f;
 
     private bool WasSprinting = false;
 
-    public static float MaxMovementSpeed { get; } = 50.0f;
+    public static float ReachDistance { get; set; } = 20.0f;
+    public Block PointedBlock { get; set; }
+    public Vector3 PointedBlockPosition;
 
     public Camera3D(Vector3 position, float aspectRatio)
     {
         Position = position;
-        Projection = Matrix.CreatePerspectiveFieldOfView(FieldOfView, aspectRatio, 0.1f, ViewDistance);
+        Projection = Matrix.CreatePerspectiveFieldOfView(
+            FieldOfView,
+            aspectRatio,
+            0.1f,
+            ViewDistance
+        );
         UpdateViewMatrix();
     }
 
@@ -35,7 +47,12 @@ public class Camera3D
     private bool isMouseControlEnabled = true; // Flag to track if mouse control is enabled
     private bool isMouseCentered = true; // Flag to check if the mouse is centered
 
-    public void Update(GameTime gameTime, KeyboardState keyboardState, MouseState mouseState, GraphicsDevice graphicsDevice)
+    public void Update(
+        GameTime gameTime,
+        KeyboardState keyboardState,
+        MouseState mouseState,
+        GraphicsDevice graphicsDevice
+    )
     {
         float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
@@ -53,8 +70,7 @@ public class Camera3D
         if (mouseState.Position.X == centerX && mouseState.Position.Y == centerY)
             isMouseCentered = true;
 
-        // Toggle camera mode with the 'P' key
-        if (mouseState.RightButton == ButtonState.Pressed && !wasMenuMode)  // Debounced press of 'P' key
+        if (mouseState.RightButton == ButtonState.Pressed && !wasMenuMode)
         {
             isMouseControlEnabled = !isMouseControlEnabled; // Toggle mouse control
             wasMenuMode = true;
@@ -96,7 +112,11 @@ public class Camera3D
                 pitch -= deltaY * rotationSpeed;
 
                 // Clamp pitch to avoid flipping
-                pitch = MathHelper.Clamp(pitch, -MathHelper.PiOver2 + 0.01f, MathHelper.PiOver2 - 0.01f);
+                pitch = MathHelper.Clamp(
+                    pitch,
+                    -MathHelper.PiOver2 + 0.01f,
+                    MathHelper.PiOver2 - 0.01f
+                );
 
                 // Reset the mouse position to the center of the screen
                 Mouse.SetPosition(centerX, centerY);
@@ -138,10 +158,88 @@ public class Camera3D
         if (keyboardState.IsKeyDown(Keys.LeftShift))
             Position -= Up * movementSpeed * deltaTime;
 
-
-
         // Update the view matrix
         UpdateViewMatrix();
+
+        // Update the pointed block
+        UpdatePointedBlock();
+    }
+
+    public void UpdatePointedBlock()
+    {
+        Vector3 rayPosition = Position;
+        Vector3 rayDirection = Vector3.Normalize(Forward);
+
+        for (float t = 0; t < ReachDistance; t += 0.2f) // Adjust step size for precision/performance
+        {
+            rayPosition += rayDirection * 0.2f;
+            Vector3 blockPos = Vector3.Floor(rayPosition); // Round down to get block coordinates
+
+            if (World.TryGetBlock(blockPos, out Block block)) // Check if a block exists
+            {
+                if (block.Type == BlockType.Air)
+                    continue;
+
+                PointedBlockPosition = blockPos; // Set the pointed block coordinates
+                PointedBlock = block; // Set the pointed block
+                return;
+            }
+        }
+
+        PointedBlockPosition = default;
+        PointedBlock = default;
+    }
+
+    public void DrawBoundingBox(BoundingBox box, GraphicsDevice graphicsDevice, BasicEffect effect, float offset = 0.001f)
+    {
+        // Enable depth testing
+        graphicsDevice.DepthStencilState = DepthStencilState.Default;
+        box.Min -= new Vector3(offset);
+        box.Max += new Vector3(offset);
+
+        // Define the corners of the bounding box
+        Vector3[] corners = box.GetCorners();
+
+        // Create a list to hold the offset corners
+        Vector3[] offsetCorners = new Vector3[corners.Length];
+
+        // Apply the offset to each corner
+        for (int i = 0; i < corners.Length; i++)
+        {
+            // Offset each corner outward along the normal
+            // We're using a simple approach to offset each vertex along the positive/negative X, Y, Z axes
+            offsetCorners[i] = corners[i];
+        }
+
+        // Define the edges of the bounding box
+        int[] indices =
+        {
+        0, 1, 1, 2, 2, 3, 3, 0, // Bottom face
+        4, 5, 5, 6, 6, 7, 7, 4, // Top face
+        0, 4, 1, 5, 2, 6, 3, 7  // Vertical edges
+        };
+
+        // Set up vertices for the edges
+        VertexPositionColor[] vertices = new VertexPositionColor[offsetCorners.Length];
+        for (int i = 0; i < offsetCorners.Length; i++)
+        {
+            vertices[i] = new VertexPositionColor(offsetCorners[i], Color.Black);
+        }
+
+        // Apply the basic effect
+        effect.VertexColorEnabled = true;
+        effect.CurrentTechnique.Passes[0].Apply();
+
+        // Draw the lines
+        graphicsDevice.DrawUserIndexedPrimitives(
+            PrimitiveType.LineList,
+            vertices,
+            0,
+            vertices.Length,
+            indices,
+            0,
+            indices.Length / 2
+        );
     }
 
 
