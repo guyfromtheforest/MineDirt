@@ -31,7 +31,7 @@ public static class World
         Vector3[] positions = [new(0, 0, 0), new(16, 0, 0), new(0, 0, 16), new(16, 0, 16)];
 
         if (!done)
-            foreach (var position in positions)
+            foreach (Vector3 position in positions)
                 AddChunk(position);
 
         done = true;
@@ -75,7 +75,7 @@ public static class World
         }
 
         //Remove chunks outside the render distance
-        foreach (var item in Chunks.Keys)
+        foreach (Vector3 item in Chunks.Keys)
             if (!chunksToKeep.Contains(item))
                 Chunks.Remove(item, out _);
     }
@@ -101,7 +101,7 @@ public static class World
             //new Vector3(position.X - Subchunk.Size, position.Y, position.Z - Subchunk.Size),  // South-West
         ];
 
-        foreach (var item in neighbors)
+        foreach (Vector3 item in neighbors)
         {
             if (Chunks.TryGetValue(item, out Chunk chunk))
             {
@@ -162,7 +162,7 @@ public static class World
         // Get the camera's frustum
         BoundingFrustum frustum = new(MineDirtGame.Camera.View * MineDirtGame.Camera.Projection);
 
-        foreach (var chunk in Chunks.Values)
+        foreach (Chunk chunk in Chunks.Values)
         {
             // Create a bounding box for the subchunk
             BoundingBox chunkBoundingBox = new(

@@ -44,7 +44,7 @@ public class Chunk
     {
         HasUpdatedBuffers = true;
 
-        foreach (var subchunk in Subchunks)
+        foreach (KeyValuePair<Vector3, Subchunk> subchunk in Subchunks)
         {
             subchunk.Value.GenerateBuffers();
         }
@@ -55,7 +55,7 @@ public class Chunk
 
     public void Draw(Effect effect)
     {
-        foreach (var item in Subchunks)
+        foreach (KeyValuePair<Vector3, Subchunk> item in Subchunks)
             item.Value.Draw(effect);
     }
 }

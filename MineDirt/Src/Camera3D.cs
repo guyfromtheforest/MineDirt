@@ -5,7 +5,8 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using MineDirt;
-using MineDirt.Src;
+
+namespace MineDirt.Src;
 
 public class Camera3D
 {
@@ -227,9 +228,7 @@ public class Camera3D
         // Set up vertices for the edges
         VertexPositionColor[] vertices = new VertexPositionColor[offsetCorners.Length];
         for (int i = 0; i < offsetCorners.Length; i++)
-        {
             vertices[i] = new VertexPositionColor(offsetCorners[i], Color.Black);
-        }
 
         // Apply the basic effect
         effect.VertexColorEnabled = true;

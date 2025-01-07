@@ -1,2 +1,2 @@
-﻿using var game = new MineDirt.MineDirtGame();
+﻿using MineDirt.MineDirtGame game = new MineDirt.MineDirtGame();
 game.Run();

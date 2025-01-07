@@ -38,7 +38,7 @@ public class TaskProcessor
         _isRunning = false;
         _taskQueue.CompleteAdding();
 
-        foreach (var thread in _workerThreads)
+        foreach (Thread thread in _workerThreads)
         {
             if (thread.IsAlive)
                 thread.Join(); // Wait for all threads to finish
@@ -51,7 +51,7 @@ public class TaskProcessor
         {
             try
             {
-                var task = _taskQueue.Take(); // Blocks until a task is available
+                Action task = _taskQueue.Take(); // Blocks until a task is available
                 task.Invoke();
             }
             catch (InvalidOperationException)

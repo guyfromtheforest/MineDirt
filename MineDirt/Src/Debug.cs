@@ -84,7 +84,7 @@ public class Debug
             updateCount = 0;
 
             chunkUpdateCount = 0;
-            foreach (var item in World.Chunks.Values)
+            foreach (Chunk item in World.Chunks.Values)
             {
                 chunkUpdateCount += item.UpdateCount;
             }

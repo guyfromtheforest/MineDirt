@@ -137,8 +137,8 @@ public class MineDirtGame : Game
         )
             Exit();
 
-        var keyboardState = Keyboard.GetState();
-        var mouseState = Mouse.GetState();
+        KeyboardState keyboardState = Keyboard.GetState();
+        MouseState mouseState = Mouse.GetState();
 
         // Update the camera with the current input and GraphicsDevice for mouse centering
         Camera.Update(gameTime, keyboardState, mouseState, GraphicsDevice);
