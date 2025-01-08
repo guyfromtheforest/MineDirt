@@ -10,6 +10,7 @@ namespace MineDirt.Src;
 public static class World
 {
     public static ConcurrentDictionary<Vector3, Chunk> Chunks = [];
+
     public static short RenderDistance { get; private set; } = 16;
 
     public static long VertexCount => Chunks.Values.ToList().Sum(chunk => chunk.VertexCount);
@@ -18,6 +19,8 @@ public static class World
     public static TaskProcessor WorldGenThread = new(4);
 
     public static void Initialize() { }
+
+    private static Vector3 lastChunkPosition = new(0, -1, 0);
 
     // public static bool done = false;
 
@@ -33,46 +36,37 @@ public static class World
         //return;
 
         Vector3 cameraPosition = MineDirtGame.Camera.Position;
-        int chunkSize = Subchunk.Size; // Assuming Subchunk.Size is 16
-        float renderDistanceSquared = RenderDistance * RenderDistance * chunkSize * chunkSize; // Square of the radius to avoid sqrt calculation
+        Vector3 chunkPosition = cameraPosition.ToChunkPosition();
 
         // HashSet for efficient chunk presence checks
         HashSet<Vector3> chunksToKeep = new();
 
-        // Loop through chunks within the render distance (in terms of chunk count, not world units)
-        for (int x = -RenderDistance; x <= RenderDistance; x++)
+        // Dont update the chunks if the camera hasn't moved to a new chunk
+        //if (chunkPosition == lastChunkPosition)
+        //    return;
+
+        Vector3 chunkCenter = new(chunkPosition.X + Subchunk.Size / 2, 0, chunkPosition.Z + Subchunk.Size / 2);
+        float renderDistanceSquared = RenderDistance * RenderDistance * Subchunk.Size * Subchunk.Size;
+        
+        cameraPosition.Y = 0;
+        float distanceSquared = Vector3.DistanceSquared(cameraPosition, chunkCenter);
+
+        //If the chunk is within the render distance(in squared distance to avoid sqrt)
+        if (distanceSquared <= renderDistanceSquared + 1)
         {
-            for (int z = -RenderDistance; z <= RenderDistance; z++)
-            {
-                // Calculate the chunk's world position based on the camera's position and chunk size
-                Vector3 chunkPosition = new(
-                    (int)(Math.Floor(cameraPosition.X / chunkSize) + x) * chunkSize,
-                    0, // Assuming Y is always 0 for simplicity
-                    (int)(Math.Floor(cameraPosition.Z / chunkSize) + z) * chunkSize
-                );
+            chunksToKeep.Add(chunkPosition);
 
-                Vector3 chunkCenter = chunkPosition + new Vector3(chunkSize / 2, 0, chunkSize / 2);
-                float distanceSquared = Vector3.DistanceSquared(
-                    new Vector3(cameraPosition.X, 0, cameraPosition.Z),
-                    chunkCenter
-                );
-
-                //If the chunk is within the render distance(in squared distance to avoid sqrt)
-                if (distanceSquared <= renderDistanceSquared + 1)
-                {
-                    chunksToKeep.Add(chunkPosition);
-
-                    //  Add new chunk if it doesn't already exist
-                    if (!Chunks.ContainsKey(chunkPosition))
-                        AddChunk(chunkPosition);
-                }
-            }
+            //  Add new chunk if it doesn't already exist
+            if (!Chunks.ContainsKey(chunkPosition))
+                AddChunk(chunkPosition);
         }
 
         //Remove chunks outside the render distance
         foreach (Vector3 item in Chunks.Keys)
             if (!chunksToKeep.Contains(item))
                 Chunks.Remove(item, out _);
+
+        lastChunkPosition = chunkPosition;
     }
 
     private static void AddChunk(Vector3 position)
@@ -90,10 +84,6 @@ public static class World
             new Vector3(position.X + Subchunk.Size, 0, position.Z), // East
             new Vector3(position.X, 0, position.Z - Subchunk.Size), // South
             new Vector3(position.X, 0, position.Z + Subchunk.Size), // North
-            //new Vector3(position.X + Subchunk.Size, position.Y, position.Z + Subchunk.Size),  // North-East
-            //new Vector3(position.X - Subchunk.Size, position.Y, position.Z + Subchunk.Size),  // North-West
-            //new Vector3(position.X + Subchunk.Size, position.Y, position.Z - Subchunk.Size),  // South-East
-            //new Vector3(position.X - Subchunk.Size, position.Y, position.Z - Subchunk.Size),  // South-West
         ];
 
         foreach (Vector3 item in neighbors)
@@ -107,40 +97,6 @@ public static class World
                 }
             }
         }
-
-        //foreach (Vector3 neighborPosition in neighbors)
-        //{
-        //    Chunk neighbourChunk;
-
-        //    if (!Chunks.ContainsKey(neighborPosition))
-        //    {
-        //        // Add the neighboring chunk without generating buffers
-        //        neighbourChunk = new(neighborPosition);
-        //        Chunks.TryAdd(neighborPosition, neighbourChunk);
-        //    }
-        //    else
-        //    {
-        //        neighbourChunk = Chunks[neighborPosition];
-        //    }
-
-        //    //neighbourChunk.HasUpdatedBuffers = false;
-
-        //    //if (HasAllNeighbours(neighborPosition))
-        //    //{
-        //    //    neighbourChunk.HasUpdatedBuffers = false;
-
-        //    //    Vector3[] neighboursNeighbours = [
-        //    //        new Vector3(neighborPosition.X - Subchunk.Size, neighborPosition.Y, neighborPosition.Z), // West
-        //    //        new Vector3(neighborPosition.X + Subchunk.Size, neighborPosition.Y, neighborPosition.Z), // East
-        //    //        new Vector3(neighborPosition.X, neighborPosition.Y, neighborPosition.Z - Subchunk.Size), // South
-        //    //        new Vector3(neighborPosition.X, neighborPosition.Y, neighborPosition.Z + Subchunk.Size),  // North
-        //    //    ];
-
-        //    //    foreach (Vector3 neighboursNeighbourPosition in neighboursNeighbours)
-        //    //        if (Chunks.TryGetValue(neighboursNeighbourPosition, out Chunk value) && HasAllNeighbours(neighboursNeighbourPosition))
-        //    //            value.HasUpdatedBuffers = false;
-        //    //}
-        //}
     }
 
     private static void GenerateBuffers()
@@ -148,7 +104,7 @@ public static class World
         foreach (Chunk item in Chunks.Values)
         {
             if (!item.HasUpdatedBuffers)
-                item.GenerateSubchunkBuffers();
+                WorldGenThread.EnqueueTask(item.GenerateSubchunkBuffers);
         }
     }
 
@@ -210,10 +166,10 @@ public static class World
             }
 
             block = default;
-            return true;
+            return false;
         }
 
         block = default;
-        return true;
+        return false;
     }
 }

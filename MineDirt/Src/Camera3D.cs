@@ -41,7 +41,7 @@ public class Camera3D
     }
 
     private bool wasMenuMode = false; // To debounce the P key press
-    private bool isMouseControlEnabled = true; // Flag to track if mouse control is enabled
+    public bool IsMouseControlEnabled = true; // Flag to track if mouse control is enabled
     private bool isMouseCentered = true; // Flag to check if the mouse is centered
 
     public void Update(
@@ -67,12 +67,12 @@ public class Camera3D
         if (mouseState.Position.X == centerX && mouseState.Position.Y == centerY)
             isMouseCentered = true;
 
-        if (mouseState.RightButton == ButtonState.Pressed && !wasMenuMode)
+        if (keyboardState.IsKeyDown(Keys.Tab) && !wasMenuMode)
         {
-            isMouseControlEnabled = !isMouseControlEnabled; // Toggle mouse control
+            IsMouseControlEnabled = !IsMouseControlEnabled; // Toggle mouse control
             wasMenuMode = true;
 
-            if (!isMouseControlEnabled)
+            if (!IsMouseControlEnabled)
             {
                 // Stop the camera from jumping if the mouse is not centered
                 if (!isMouseCentered)
@@ -92,11 +92,11 @@ public class Camera3D
         }
 
         // Flag to handle debouncing key press (avoids rapid toggling)
-        if (mouseState.RightButton == ButtonState.Released)
+        if (keyboardState.IsKeyUp(Keys.Tab))
             wasMenuMode = false;
 
         // Camera follows the mouse if it's enabled
-        if (isMouseControlEnabled)
+        if (IsMouseControlEnabled)
         {
             // Calculate mouse movement (delta) only if the mouse is centered
             if (isMouseCentered)

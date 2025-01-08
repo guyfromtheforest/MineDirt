@@ -67,6 +67,9 @@ public class Subchunk
         //n = 0;
         //return;
 
+        Vector3 blockPosition; 
+        Vector3 worldBlockPosition;
+
         for (byte x = 0; x < Size; x++)
         {
             for (byte z = 0; z < Size; z++)
@@ -81,8 +84,13 @@ public class Subchunk
 
                 for (byte y = 0; y < Size; y++)
                 {
-                    Vector3 blockPosition = new(x, y, z);
-                    Vector3 worldBlockPosition = blockPosition + Position;
+                    blockPosition.X = x;
+                    blockPosition.Y = y;
+                    blockPosition.Z = z;
+
+                    worldBlockPosition.X = blockPosition.X + Position.X;
+                    worldBlockPosition.Y = blockPosition.Y + Position.Y;
+                    worldBlockPosition.Z = blockPosition.Z + Position.Z;
 
                     int blockIndex = GetIndexFromX(x) + GetIndexFromY(y) + GetIndexFromZ(z);
                     Block block = new();
@@ -197,6 +205,8 @@ public class Subchunk
         IndexBuffer.SetData(allIndices.ToArray());
     }
 
+    Vector3 subchunkDirection; 
+    Vector3 subchunkPos; 
     bool IsFaceVisible(ushort blockIndex, short direction)
     {
         int unwrappedNbIndex = blockIndex + direction;
@@ -215,13 +225,13 @@ public class Subchunk
         // Determine if neighbor position is out of bounds
         if (isOutOfBounds)
         {
-            Vector3 subchunkDirection = new(
-                direction / (Size * Size) % Size,
-                direction / Size % Size,
-                direction % Size
-            );
+            subchunkDirection.X = direction / (Size * Size) % Size;
+            subchunkDirection.Y = direction / Size % Size;
+            subchunkDirection.Z = direction % Size;
 
-            Vector3 subchunkPos = Position + (subchunkDirection * Size);
+            subchunkPos.X = Position.X + (subchunkDirection.X * Size);
+            subchunkPos.Y = Position.Y + (subchunkDirection.Y * Size);
+            subchunkPos.Z = Position.Z + (subchunkDirection.Z * Size);
 
             // If the neighbor block is below bedrock level or build limit 
             if (subchunkPos.Y >= Chunk.Height || subchunkPos.Y < 0)

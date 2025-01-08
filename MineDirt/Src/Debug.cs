@@ -13,6 +13,8 @@ public class Debug
 
     private bool hasSetWindowSize = false;
     
+    private TimeSpan timeToShowDebugWindow = new(0, 0, 1);
+
     // Get the current process
     Process currentProcess = Process.GetCurrentProcess();
 
@@ -68,11 +70,7 @@ public class Debug
     {
         float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
-        cameraChunkPosition = new Vector3(
-            (int)(Math.Floor(MineDirtGame.Camera.Position.X / Subchunk.Size) * Subchunk.Size),
-            0,
-            (int)(Math.Floor(MineDirtGame.Camera.Position.Z / Subchunk.Size) * Subchunk.Size)
-        );
+        cameraChunkPosition = MineDirtGame.Camera.Position.ToChunkPosition();
 
         // Update UPS (Updates Per Second)
         upsTimer += deltaTime;
@@ -118,7 +116,8 @@ public class Debug
         }
 
         // Create an ImGui window for camera coordinates
-        if (ImGui.Begin("Debug"))
+        if(gameTime.TotalGameTime > timeToShowDebugWindow)
+        if (ImGui.Begin("Debug", ImGuiWindowFlags.NoFocusOnAppearing))
         {
             // Create an ImGui window for camera coordinates
             if (!hasSetWindowSize)
