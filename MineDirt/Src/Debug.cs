@@ -11,7 +11,7 @@ public class Debug
 {
     public ImGuiRenderer GuiRenderer;
 
-    private bool hasSetWindowSize = false;
+    private bool hasFirstDrawFinished = false;
     
     private TimeSpan timeToShowDebugWindow = new(0, 0, 1);
 
@@ -103,6 +103,9 @@ public class Debug
 
     public void EndDraw(GameTime gameTime)
     {
+        if(gameTime.TotalGameTime < timeToShowDebugWindow)
+            return; 
+
         GuiRenderer.BeginLayout(gameTime);
 
         // Calculate FPS (Frames Per Second)
@@ -116,14 +119,12 @@ public class Debug
         }
 
         // Create an ImGui window for camera coordinates
-        if(gameTime.TotalGameTime > timeToShowDebugWindow)
         if (ImGui.Begin("Debug", ImGuiWindowFlags.NoFocusOnAppearing))
         {
             // Create an ImGui window for camera coordinates
-            if (!hasSetWindowSize)
+            if (!hasFirstDrawFinished)
             {
                 ImGui.SetWindowSize(new System.Numerics.Vector2(400, 320));
-                hasSetWindowSize = true;
             }
 
             // Display the pointed block 
@@ -161,11 +162,28 @@ public class Debug
             // Checkbox 
             ImGui.Checkbox("Render Wireframes", ref RenderWireframes);
 
+            // Add button to reload chunks
+            if (ImGui.Button("Reload Chunks"))
+            {
+                World.ReloadChunks();
+            }
+
             // Slider for movement speed
             ImGui.SliderFloat("Movement Speed", ref cameraSpeed, 0.1f, 50f);
 
-            // Teleport
-            // Input
+            Camera3D.MovementSpeed = cameraSpeed;
+        }
+
+        ImGui.End();
+
+        if(ImGui.Begin("Teleport"))
+        {
+            // Create an ImGui window for camera coordinates
+            if (!hasFirstDrawFinished)
+            {
+                ImGui.SetWindowSize(new System.Numerics.Vector2(400, 320));
+            }
+
             ImGui.InputFloat("X", ref TeleportPos.X);
             ImGui.InputFloat("Y", ref TeleportPos.Y);
             ImGui.InputFloat("Z", ref TeleportPos.Z);
@@ -173,12 +191,11 @@ public class Debug
             {
                 MineDirtGame.Camera.Position = TeleportPos;
             }
-
-            Camera3D.MovementSpeed = cameraSpeed;
         }
-        ImGui.End();
 
         GuiRenderer.EndLayout();
+
+        hasFirstDrawFinished = true;
     }
 
     public void BeginDraw(GameTime gameTime)

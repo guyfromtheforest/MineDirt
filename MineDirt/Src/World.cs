@@ -16,7 +16,8 @@ public static class World
     public static long VertexCount => Chunks.Values.ToList().Sum(chunk => chunk.VertexCount);
     public static long IndexCount => Chunks.Values.ToList().Sum(chunk => chunk.IndexCount);
 
-    public static TaskProcessor WorldGenThread = new(4);
+    public static TaskProcessor WorldMeshThreadPool = new(4); // Number of threads to use for world generation and mesh building
+    private const int ChunksPerFrame = 4; // Number of chunks to process per frame
 
     public static void Initialize() { }
 
@@ -24,16 +25,22 @@ public static class World
 
     // public static bool done = false;
 
+    private static Queue<Vector3> chunkLoadQueue = new();
+
+    public static void ReloadChunks()
+    {
+        lastCameraChunkPosition = new(0, -1, 0);
+        Chunks.Clear();
+    }
+
     public static void UpdateChunks()
     {
-        //Vector3[] positions = [new(0, 0, 0), new(16, 0, 0), new(0, 0, 16), new(16, 0, 16)];
-
-        //if (!done)
-        //    foreach (Vector3 position in positions)
-        //        AddChunk(position);
-
-        //done = true;
-        //return;
+        // Process chunks from the queue, limited by ChunksPerFrame
+        for (int i = 0; i < ChunksPerFrame && chunkLoadQueue.Count > 0; i++)
+        {
+            Vector3 chunkToLoad = chunkLoadQueue.Dequeue();
+            AddChunk(chunkToLoad);
+        }
 
         Vector3 cameraPosition = MineDirtGame.Camera.Position;
         Vector3 cameraChunkPosition = cameraPosition.ToChunkPosition();
@@ -41,7 +48,7 @@ public static class World
         // HashSet for efficient chunk presence checks
         HashSet<Vector3> chunksToKeep = new();
 
-        // Dont update the chunks if the camera hasn't moved to a new chunk
+        // Don't update the chunks if the camera hasn't moved to a new chunk
         if (cameraChunkPosition == lastCameraChunkPosition)
             return;
 
@@ -50,37 +57,40 @@ public static class World
 
         cameraPosition.Y = 0;
 
-        for (int x = -RenderDistance; x <= RenderDistance; x++)
+        for (int r = 0; r <= RenderDistance; r++)
         {
-            for (int z = -RenderDistance; z <= RenderDistance; z++)
+            for (int x = -r; x <= r; x++)
             {
-                Vector3 chunkPosition = new(
-                    (int)(Math.Floor(cameraPosition.X / Subchunk.Size) + x) * Subchunk.Size,
-                    0, // Assuming Y is always 0 for simplicity
-                    (int)(Math.Floor(cameraPosition.Z / Subchunk.Size) + z) * Subchunk.Size
-                );
-
-                Vector3 chunkCenter = new(
-                    chunkPosition.X + (Subchunk.Size / 2),
-                    0,
-                    chunkPosition.Z + (Subchunk.Size / 2)
-                );
-
-                float distanceSquared = Vector3.DistanceSquared(cameraPosition, chunkCenter);
-
-                //If the chunk is within the render distance(in squared distance to avoid sqrt)
-                if (distanceSquared <= renderDistanceSquared + 1)
+                for (int z = -r; z <= r; z++)
                 {
-                    chunksToKeep.Add(chunkPosition);
+                    Vector3 chunkPosition = new(
+                        (int)(Math.Floor(cameraPosition.X / Subchunk.Size) + x) * Subchunk.Size,
+                        0, // Assuming Y is always 0 for simplicity
+                        (int)(Math.Floor(cameraPosition.Z / Subchunk.Size) + z) * Subchunk.Size
+                    );
 
-                    //  Add new chunk if it doesn't already exist
-                    if (!Chunks.ContainsKey(chunkPosition))
-                        AddChunk(chunkPosition);
+                    Vector3 chunkCenter = new(
+                        chunkPosition.X + (Subchunk.Size / 2),
+                        0,
+                        chunkPosition.Z + (Subchunk.Size / 2)
+                    );
+
+                    float distanceSquared = Vector3.DistanceSquared(cameraPosition, chunkCenter);
+
+                    // If the chunk is within the render distance (in squared distance to avoid sqrt)
+                    if (distanceSquared <= renderDistanceSquared + 1)
+                    {
+                        chunksToKeep.Add(chunkPosition);
+
+                        // Queue new chunks for addition if they don't already exist
+                        if (!Chunks.ContainsKey(chunkPosition) && !chunkLoadQueue.Contains(chunkPosition))
+                            chunkLoadQueue.Enqueue(chunkPosition);
+                    }
                 }
             }
         }
 
-        //Remove chunks outside the render distance
+        // Remove chunks outside the render distance
         foreach (Vector3 item in Chunks.Keys)
             if (!chunksToKeep.Contains(item))
                 Chunks.Remove(item, out _);
@@ -112,7 +122,7 @@ public static class World
                 if (!chunk.IsUpdatingBuffers)
                 {
                     chunk.IsUpdatingBuffers = true;
-                    chunk.GenerateSubchunkBuffers();
+                    WorldMeshThreadPool.EnqueueTask(chunk.GenerateSubchunkBuffers);
                 }
             }
         }
@@ -123,7 +133,8 @@ public static class World
         foreach (Chunk item in Chunks.Values)
         {
             if (!item.HasUpdatedBuffers)
-                WorldGenThread.EnqueueTask(item.GenerateSubchunkBuffers);
+                // WorldGenThread.EnqueueTask(item.GenerateSubchunkBuffers);
+                item.GenerateSubchunkBuffers();
         }
     }
 
