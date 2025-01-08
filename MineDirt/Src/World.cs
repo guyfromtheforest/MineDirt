@@ -20,7 +20,7 @@ public static class World
 
     public static void Initialize() { }
 
-    private static Vector3 lastChunkPosition = new(0, -1, 0);
+    private static Vector3 lastCameraChunkPosition = new(0, -1, 0);
 
     // public static bool done = false;
 
@@ -36,29 +36,48 @@ public static class World
         //return;
 
         Vector3 cameraPosition = MineDirtGame.Camera.Position;
-        Vector3 chunkPosition = cameraPosition.ToChunkPosition();
+        Vector3 cameraChunkPosition = cameraPosition.ToChunkPosition();
 
         // HashSet for efficient chunk presence checks
         HashSet<Vector3> chunksToKeep = new();
 
         // Dont update the chunks if the camera hasn't moved to a new chunk
-        //if (chunkPosition == lastChunkPosition)
-        //    return;
+        if (cameraChunkPosition == lastCameraChunkPosition)
+            return;
 
-        Vector3 chunkCenter = new(chunkPosition.X + Subchunk.Size / 2, 0, chunkPosition.Z + Subchunk.Size / 2);
-        float renderDistanceSquared = RenderDistance * RenderDistance * Subchunk.Size * Subchunk.Size;
-        
+        float renderDistanceSquared =
+            RenderDistance * RenderDistance * Subchunk.Size * Subchunk.Size;
+
         cameraPosition.Y = 0;
-        float distanceSquared = Vector3.DistanceSquared(cameraPosition, chunkCenter);
 
-        //If the chunk is within the render distance(in squared distance to avoid sqrt)
-        if (distanceSquared <= renderDistanceSquared + 1)
+        for (int x = -RenderDistance; x <= RenderDistance; x++)
         {
-            chunksToKeep.Add(chunkPosition);
+            for (int z = -RenderDistance; z <= RenderDistance; z++)
+            {
+                Vector3 chunkPosition = new(
+                    (int)(Math.Floor(cameraPosition.X / Subchunk.Size) + x) * Subchunk.Size,
+                    0, // Assuming Y is always 0 for simplicity
+                    (int)(Math.Floor(cameraPosition.Z / Subchunk.Size) + z) * Subchunk.Size
+                );
 
-            //  Add new chunk if it doesn't already exist
-            if (!Chunks.ContainsKey(chunkPosition))
-                AddChunk(chunkPosition);
+                Vector3 chunkCenter = new(
+                    chunkPosition.X + (Subchunk.Size / 2),
+                    0,
+                    chunkPosition.Z + (Subchunk.Size / 2)
+                );
+
+                float distanceSquared = Vector3.DistanceSquared(cameraPosition, chunkCenter);
+
+                //If the chunk is within the render distance(in squared distance to avoid sqrt)
+                if (distanceSquared <= renderDistanceSquared + 1)
+                {
+                    chunksToKeep.Add(chunkPosition);
+
+                    //  Add new chunk if it doesn't already exist
+                    if (!Chunks.ContainsKey(chunkPosition))
+                        AddChunk(chunkPosition);
+                }
+            }
         }
 
         //Remove chunks outside the render distance
@@ -66,7 +85,7 @@ public static class World
             if (!chunksToKeep.Contains(item))
                 Chunks.Remove(item, out _);
 
-        lastChunkPosition = chunkPosition;
+        lastCameraChunkPosition = cameraChunkPosition;
     }
 
     private static void AddChunk(Vector3 position)
