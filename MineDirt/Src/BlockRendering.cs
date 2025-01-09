@@ -27,6 +27,15 @@ public static class BlockRendering
                 new Vector3(pos.X + 1f, pos.Y - 0f, pos.Z + 1f)
             ];
 
+        if(blockType == BlockType.Water)
+        {
+            Vector3 waterLevel = new(0, -0.1f, 0);
+            for (int i = 0; i < positions.Length; i++)
+            {
+                positions[i] += waterLevel;
+            }
+        }
+
         if (textures[blockType].Length == 1)
             return [
             // Front face (using the side texture)
