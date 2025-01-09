@@ -31,6 +31,9 @@ public class MineDirtGame : Game
 
     Chunk chunk;
 
+    bool mouseLeftWasDown = false;
+    bool mouseRightWasDown = false;
+
     public MineDirtGame()
     {
         Graphics = new GraphicsDeviceManager(this);
@@ -139,8 +142,30 @@ public class MineDirtGame : Game
 
         // Update the camera with the current input and GraphicsDevice for mouse centering
         Camera.Update(gameTime, keyboardState, mouseState, GraphicsDevice);
-        
         IsMouseVisible = IsMouseCursorVisible;
+
+        // Check if player is in menu mode
+        if(Camera.IsMouseControlEnabled)
+        {
+            if(mouseState.LeftButton == ButtonState.Pressed && !mouseLeftWasDown)
+            {
+                mouseLeftWasDown = true; 
+                if(Camera.PointedBlock.Type != BlockType.Air)
+                {
+                    World.BreakBlock(Camera.PointedBlockPosition);
+                }
+            }
+            else if (mouseState.RightButton == ButtonState.Pressed)
+            {
+                mouseRightWasDown = true;
+            }
+        }
+
+        if(mouseState.LeftButton == ButtonState.Released)
+            mouseLeftWasDown = false;
+
+        if (mouseState.RightButton == ButtonState.Released)
+            mouseRightWasDown = false;
 
         World.UpdateChunks();
 

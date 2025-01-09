@@ -33,6 +33,35 @@ public static class World
         Chunks.Clear();
     }
 
+    public static void BreakBlock(Vector3 position)
+    {
+        if (Chunks.TryGetValue(position.ToChunkPosition(), out Chunk chunk))
+        {
+            if (chunk.Subchunks.TryGetValue(position.ToSubchunkPosition(), out Subchunk subchunk))
+            {
+                int index = position.ToSubchunkRelativePosition().ToIndex();
+                subchunk.Blocks[index] = default;
+                chunk.IsUpdatingBuffers = true;
+                chunk.GenerateSubchunkBuffers();
+
+                if (subchunk.GetBlockSubchunkNeighbour(index, out List<Vector3> subchunkNbPositions))
+                {
+                    foreach (Vector3 subchunkNbPos in subchunkNbPositions)
+                    {
+                        if (Chunks.TryGetValue(subchunkNbPos.ToChunkPosition(), out Chunk chunkNb))
+                        {
+                            if (chunkNb.Subchunks.TryGetValue(subchunkNbPos, out Subchunk subchunkNb))
+                            {
+                                chunkNb.IsUpdatingBuffers = true;
+                                chunkNb.GenerateSubchunkBuffers();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     public static void UpdateChunks()
     {
         // Process chunks from the queue, limited by ChunksPerFrame
@@ -100,8 +129,6 @@ public static class World
 
     private static void AddChunk(Vector3 position)
     {
-        // Check if the chunk already exists
-
         // Add the new chunk without generating buffers
         Chunk newChunk = new(position);
         Chunks.TryAdd(position, newChunk);
@@ -133,7 +160,6 @@ public static class World
         foreach (Chunk item in Chunks.Values)
         {
             if (!item.HasUpdatedBuffers)
-                // WorldGenThread.EnqueueTask(item.GenerateSubchunkBuffers);
                 item.GenerateSubchunkBuffers();
         }
     }

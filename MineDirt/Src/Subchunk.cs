@@ -67,7 +67,7 @@ public class Subchunk
         //n = 0;
         //return;
 
-        Vector3 blockPosition; 
+        Vector3 blockPosition;
         Vector3 worldBlockPosition;
 
         for (byte x = 0; x < Size; x++)
@@ -205,8 +205,8 @@ public class Subchunk
         IndexBuffer.SetData(allIndices.ToArray());
     }
 
-    Vector3 subchunkDirection; 
-    Vector3 subchunkPos; 
+    Vector3 subchunkDirection;
+    Vector3 subchunkPos;
     bool IsFaceVisible(ushort blockIndex, short direction)
     {
         int unwrappedNbIndex = blockIndex + direction;
@@ -247,6 +247,35 @@ public class Subchunk
 
         // Check if neighbor block exists within the same subchunk
         return Blocks[unwrappedNbIndex].Type == BlockType.Air;
+    }
+
+    public bool GetBlockSubchunkNeighbour(int index, out List<Vector3> subchunkPos)
+    {
+        int x = GetXFromIndex(index);
+        int y = GetYFromIndex(index);
+        int z = GetZFromIndex(index);
+
+        subchunkPos = [];
+
+        if (x == 0)
+            subchunkPos.Add(Position + (new Vector3(-1, 0, 0) * Size));
+
+        if (x == Size - 1)
+            subchunkPos.Add(Position + (new Vector3(1, 0, 0) * Size));
+
+        if (y == 0)
+            subchunkPos.Add(Position + (new Vector3(0, -1, 0) * Size));
+
+        if (y == Size - 1)
+            subchunkPos.Add(Position + (new Vector3(0, 1, 0) * Size));
+
+        if (z == 0)
+            subchunkPos.Add(Position + (new Vector3(0, 1, -1) * Size));
+
+        if (z == Size - 1)
+            subchunkPos.Add(Position + (new Vector3(0, 0, 1) * Size));
+     
+        return subchunkPos.Count > 0;
     }
 
     public static int GetXFromIndex(int index) => index / (Size * Size) % Size;
