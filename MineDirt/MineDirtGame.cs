@@ -123,6 +123,8 @@ public class MineDirtGame : Game
         BlockRendering.Load(BlockType.Cobblestone, [3]);
         BlockRendering.Load(BlockType.Bedrock, [4]);
         BlockRendering.Load(BlockType.Stone, [5]);
+        BlockRendering.Load(BlockType.Glass, [34]);
+        BlockRendering.Load(BlockType.Water, [35]);
 
 #if DEBUG
         debug.LoadContent();
@@ -158,12 +160,7 @@ public class MineDirtGame : Game
             else if (mouseState.RightButton == ButtonState.Pressed && !mouseRightWasDown)
             {
                 mouseRightWasDown = true;
-                Block block = new()
-                {
-                    Type = BlockType.Cobblestone
-                };
-
-                block.SetBlockOpacity(true);
+                Block block = new(BlockType.Glass);
 
                 World.PlaceBlock(Camera.PointedBlockPosition + Camera.PointedBlockFace, block);
             }
@@ -192,7 +189,6 @@ public class MineDirtGame : Game
         GraphicsDevice.Clear(Color.CornflowerBlue);
         GraphicsDevice.SamplerStates[0] = SamplerState.PointClamp;
         GraphicsDevice.DepthStencilState = DepthStencilState.Default;
-
 
         effect.View = Camera.View;
         effect.Projection = Camera.Projection;

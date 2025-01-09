@@ -8,7 +8,9 @@ public class Chunk
     public Vector3 Position { get; private set; }
 
     public long VertexCount => Subchunks.Values.ToList().Sum(subchunk => subchunk.VertexCount);
+    public long TransparentVertexCount => Subchunks.Values.ToList().Sum(subchunk => subchunk.TransparentVertexCount);
     public long IndexCount => Subchunks.Values.ToList().Sum(subchunk => subchunk.IndexCount);
+    public long TransparentIndexCount => Subchunks.Values.ToList().Sum(subchunk => subchunk.TransparentIndexCount);
 
     public bool HasUpdatedBuffers = false; 
     public bool IsUpdatingBuffers = false;
@@ -52,9 +54,15 @@ public class Chunk
         UpdateCount++;
     }   
 
-    public void Draw(Effect effect)
+    public void DrawOpaque(Effect effect)
     {
         foreach (KeyValuePair<Vector3, Subchunk> item in Subchunks)
-            item.Value.Draw(effect);
+            item.Value.DrawOpaque(effect);
+    }
+
+    public void DrawTransparent(Effect effect)
+    {
+        foreach (KeyValuePair<Vector3, Subchunk> item in Subchunks)
+            item.Value.DrawTransparent(effect);
     }
 }

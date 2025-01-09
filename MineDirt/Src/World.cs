@@ -218,7 +218,8 @@ public static class World
             if (frustum.Contains(chunkBoundingBox) != ContainmentType.Disjoint)
             {
                 // Only draw subchunks within the frustum
-                chunk.Draw(effect);
+                chunk.DrawOpaque(effect);
+                chunk.DrawTransparent(effect);
             }
         }
     }

@@ -4,16 +4,6 @@ using System.Linq;
 
 namespace MineDirt.Src;
 
-public enum BlockType : byte
-{
-    Air,
-    Dirt,
-    Grass,
-    Cobblestone,
-    Bedrock,
-    Stone
-}
-
 public static class BlockRendering
 {
     public static Dictionary<BlockType, Vector2[][]> textures = [];

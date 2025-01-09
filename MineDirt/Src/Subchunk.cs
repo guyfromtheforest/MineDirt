@@ -13,10 +13,15 @@ public class Subchunk
     public Block[] Blocks { get; private set; }
     public ushort BlockCount;
     public VertexBuffer VertexBuffer { get; private set; }
+    public VertexBuffer TransparentVertexBuffer { get; private set; }
     public IndexBuffer IndexBuffer { get; private set; }
+    public IndexBuffer TransparentIndexBuffer { get; private set; }
 
     public int VertexCount => VertexBuffer?.VertexCount ?? 0;
     public int IndexCount => IndexBuffer?.IndexCount ?? 0;
+
+    public int TransparentVertexCount => TransparentVertexBuffer?.VertexCount ?? 0;
+    public int TransparentIndexCount => TransparentIndexBuffer?.IndexCount ?? 0;
 
     //static readonly Vector3[] faceDirections =
     //[
@@ -94,34 +99,41 @@ public class Subchunk
 
                     int blockIndex = GetIndexFromX(x) + GetIndexFromY(y) + GetIndexFromZ(z);
                     Block block = new();
-                    block.SetBlockOpacity(true);
 
                     if (worldBlockPosition.Y == 0)
                     {
                         // Bedrock at the bottom layer
                         //ChunkBlocks.Add(blockPosition, Blocks.Bedrock(blockPosition));
-                        block.Type = BlockType.Bedrock;
+                        block = new(BlockType.Bedrock);
                         BlockCount++;
                     }
                     else if (worldBlockPosition.Y < maxHeight - 10)
                     {
                         // Stone below the surface
                         //ChunkBlocks.Add(blockPosition, Blocks.Stone(blockPosition));
-                        block.Type = BlockType.Stone;
+                        block = new(BlockType.Stone);
                         BlockCount++;
                     }
                     else if (worldBlockPosition.Y < maxHeight - 1)
                     {
                         // Dirt below the surface
                         //ChunkBlocks.Add(blockPosition, Blocks.Dirt(blockPosition));
-                        block.Type = BlockType.Dirt;
+                        block = new(BlockType.Dirt);
                         BlockCount++;
                     }
                     else if (worldBlockPosition.Y == maxHeight - 1)
                     {
                         // Grass on the surface
                         //ChunkBlocks.Add(blockPosition, Blocks.Grass(blockPosition));
-                        block.Type = BlockType.Grass;
+                        block = new(BlockType.Grass);
+                        BlockCount++;
+                    }
+
+                    if(block.Type == BlockType.Air && worldBlockPosition.Y < Chunk.Height / 2)
+                    {
+                        // Water below sea level
+                        //ChunkBlocks.Add(blockPosition, Blocks.Water(blockPosition));
+                        block = new(BlockType.Water);
                         BlockCount++;
                     }
 
@@ -133,21 +145,28 @@ public class Subchunk
 
     public void GenerateBuffers()
     {
-        if (BlockCount <= 0 || MineDirtGame.Graphics?.GraphicsDevice == null)
+        if (BlockCount <= 0)
             return;
 
-        // Create vertex and index arrays
+        // Create vertex and index lists
         List<QuantizedVertex> allVertices = [];
         List<int> allIndices = [];
 
         int vertexOffset = 0;
         int indexOffset = 0;
 
+        // Create transparent vertex and index lists
+        List<QuantizedVertex> allTransparentVertices = [];
+        List<int> allTransparentIndices = [];
+
+        int transparentVertexOffset = 0;
+        int transparentIndexOffset = 0;
+
         Vector3 blockPos = new();
         for (ushort k = 0; k < Blocks.Length; k++)
         {
-            BlockType block = Blocks[k].Type;
-            if (block == BlockType.Air)
+            Block block = Blocks[k];
+            if (block.Type == BlockType.Air)
                 continue;
 
             // TODO: optimize in the shader
@@ -162,20 +181,33 @@ public class Subchunk
 
                 // Add the vertices and indices for this face
                 QuantizedVertex[] faceVertices = BlockRendering.GetFaceVertices(
-                    block,
+                    block.Type,
                     faceIndex,
                     blockPos + Position
                 );
 
-                for (int i = 0; i < faceVertices.Length; i++)
-                    allVertices.Add(faceVertices[i]);
+                if (block.IsOpaque)
+                {
+                    for (int i = 0; i < faceVertices.Length; i++)
+                        allVertices.Add(faceVertices[i]);
 
-                for (byte i = 0; i < BlockRendering.Indices.Length; i++)
-                    allIndices.Add(BlockRendering.Indices[i] + vertexOffset);
+                    for (byte i = 0; i < BlockRendering.Indices.Length; i++)
+                        allIndices.Add(BlockRendering.Indices[i] + vertexOffset);
 
-                vertexOffset += faceVertices.Length;
-                indexOffset += BlockRendering.Indices.Length;
+                    vertexOffset += faceVertices.Length;
+                    indexOffset += BlockRendering.Indices.Length;
+                }
+                else
+                {
+                    for (int i = 0; i < faceVertices.Length; i++)
+                        allTransparentVertices.Add(faceVertices[i]);
 
+                    for (byte i = 0; i < BlockRendering.Indices.Length; i++)
+                        allTransparentIndices.Add(BlockRendering.Indices[i] + transparentVertexOffset);
+
+                    transparentVertexOffset += faceVertices.Length;
+                    transparentIndexOffset += BlockRendering.Indices.Length;
+                }
                 // Update the block's bitmask
                 Blocks[k].SetAdjacentFaceVisibility(Block.AdjentFaceMask.Front, true);
             }
@@ -184,31 +216,62 @@ public class Subchunk
             Blocks[k].SetIsBitmaskBuilt(true);
         }
 
-        // Create the buffers
-        if (allVertices.Count == 0 || allIndices.Count == 0)
-            return;
+        if (vertexOffset > 0)
+        {
+            VertexBuffer = new VertexBuffer(
+                MineDirtGame.Graphics.GraphicsDevice,
+                typeof(QuantizedVertex),
+                allVertices.Count,
+                BufferUsage.WriteOnly
+            );
+            VertexBuffer.SetData(allVertices.ToArray());
 
-        VertexBuffer = new VertexBuffer(
-            MineDirtGame.Graphics.GraphicsDevice,
-            typeof(QuantizedVertex),
-            allVertices.Count,
-            BufferUsage.WriteOnly
-        );
-        VertexBuffer.SetData(allVertices.ToArray());
+            IndexBuffer = new IndexBuffer(
+                MineDirtGame.Graphics.GraphicsDevice,
+                IndexElementSize.ThirtyTwoBits,
+                allIndices.Count,
+                BufferUsage.WriteOnly
+            );
+            IndexBuffer.SetData(allIndices.ToArray());
+        }
+        else
+        {
+            VertexBuffer = null;
+            IndexBuffer = null;
+        }
 
-        IndexBuffer = new IndexBuffer(
-            MineDirtGame.Graphics.GraphicsDevice,
-            IndexElementSize.ThirtyTwoBits,
-            allIndices.Count,
-            BufferUsage.WriteOnly
-        );
-        IndexBuffer.SetData(allIndices.ToArray());
+        if (transparentVertexOffset > 0)
+        {
+            TransparentVertexBuffer = new VertexBuffer(
+                MineDirtGame.Graphics.GraphicsDevice,
+                typeof(QuantizedVertex),
+                allTransparentVertices.Count,
+                BufferUsage.WriteOnly
+            );
+            TransparentVertexBuffer.SetData(allTransparentVertices.ToArray());
+
+            TransparentIndexBuffer = new IndexBuffer(
+                MineDirtGame.Graphics.GraphicsDevice,
+                IndexElementSize.ThirtyTwoBits,
+                allTransparentIndices.Count,
+                BufferUsage.WriteOnly
+            );
+            TransparentIndexBuffer.SetData(allTransparentIndices.ToArray());
+        }
+        else
+        {
+            TransparentVertexBuffer = null;
+            TransparentIndexBuffer = null;
+        }
+
     }
 
     Vector3 subchunkDirection;
     Vector3 subchunkPos;
+
     bool IsFaceVisible(ushort blockIndex, short direction)
     {
+        Block block = Blocks[blockIndex];
         int unwrappedNbIndex = blockIndex + direction;
         int unwX = GetXFromIndex(blockIndex) + GetXFromIndex(direction);
         int unwY = GetYFromIndex(blockIndex) + GetYFromIndex(direction);
@@ -233,20 +296,17 @@ public class Subchunk
             subchunkPos.Y = Position.Y + (subchunkDirection.Y * Size);
             subchunkPos.Z = Position.Z + (subchunkDirection.Z * Size);
 
-            // If the neighbor block is below bedrock level or build limit 
+            // If the neighbor block is below bedrock level or build limit
             if (subchunkPos.Y >= Chunk.Height || subchunkPos.Y < 0)
                 return true;
 
-            return World.TryGetBlock(
-                    subchunkPos,
-                    wrappedNbIndex,
-                    out Block test
-                )
-                && test.Type == BlockType.Air;
+            return World.TryGetBlock(subchunkPos, wrappedNbIndex, out Block oNbBlock)
+                && block.IsOpaque && !oNbBlock.IsOpaque || (!block.IsOpaque && !oNbBlock.IsOpaque && (block.Type != oNbBlock.Type));
         }
 
-        // Check if neighbor block exists within the same subchunk
-        return Blocks[unwrappedNbIndex].Type == BlockType.Air;
+        Block nbBlock = Blocks[wrappedNbIndex];
+
+        return block.IsOpaque && !nbBlock.IsOpaque || (!block.IsOpaque && !nbBlock.IsOpaque && (block.Type != nbBlock.Type));
     }
 
     public bool GetBlockSubchunkNeighbour(int index, out List<Vector3> subchunkPos)
@@ -274,7 +334,7 @@ public class Subchunk
 
         if (z == Size - 1)
             subchunkPos.Add(Position + (new Vector3(0, 0, 1) * Size));
-     
+
         return subchunkPos.Count > 0;
     }
 
@@ -290,9 +350,9 @@ public class Subchunk
 
     public static int GetIndexFromZ(int z) => z;
 
-    public void Draw(Effect effect)
+    public void DrawOpaque(Effect effect)
     {
-        if (VertexCount == 0 || IndexCount == 0)
+        if (BlockCount <= 0 || VertexBuffer == null || IndexBuffer == null)
             return;
 
         // Set the chunk's vertex buffer and index buffer
@@ -308,6 +368,28 @@ public class Subchunk
                 0,
                 0,
                 IndexCount / 3
+            );
+        }
+    }
+
+    public void DrawTransparent(Effect effect)
+    {
+        if (BlockCount <= 0 || TransparentVertexBuffer == null || TransparentIndexBuffer == null)
+            return;
+
+        // Set the chunk's vertex buffer and index buffer
+        MineDirtGame.Graphics.GraphicsDevice.SetVertexBuffer(TransparentVertexBuffer);
+        MineDirtGame.Graphics.GraphicsDevice.Indices = TransparentIndexBuffer;
+
+        // Apply the custom shader
+        foreach (EffectPass pass in effect.CurrentTechnique.Passes)
+        {
+            pass.Apply(); // Apply the pass to set up the shader
+            MineDirtGame.Graphics.GraphicsDevice.DrawIndexedPrimitives(
+                PrimitiveType.TriangleList,
+                0,
+                0,
+                TransparentIndexCount / 3
             );
         }
     }

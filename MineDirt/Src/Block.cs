@@ -1,4 +1,15 @@
 ﻿namespace MineDirt.Src;
+public enum BlockType : byte
+{
+    Air,
+    Dirt,
+    Grass,
+    Cobblestone,
+    Bedrock,
+    Stone,
+    Glass,
+    Water
+}
 
 public struct Block
 {
@@ -31,7 +42,22 @@ public struct Block
         (short)(-1 * Subchunk.Size), // Bottom
     ];
 
-    public readonly bool BlockOpacity => (AdjacentFacesVisibility & OpacityMask) != 0;
+    public Block(BlockType type = BlockType.Air)
+    {
+        Type = type;
+        AdjacentFacesVisibility = 0b01000000;
+
+        if (Type == BlockType.Air)
+            AdjacentFacesVisibility = 0;
+
+        if(Type == BlockType.Glass)
+            AdjacentFacesVisibility = 0;
+
+        if (Type == BlockType.Water)
+            AdjacentFacesVisibility = 0;
+    }
+
+    public readonly bool IsOpaque => (AdjacentFacesVisibility & OpacityMask) != 0;
 
     public readonly bool IsBitmaskBuilt => (AdjacentFacesVisibility & BitmaskBuiltMask) != 0;
 
