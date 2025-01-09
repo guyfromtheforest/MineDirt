@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using MineDirt;
 using System.Collections.Generic;
 using System.Linq;
 public class Chunk
@@ -18,6 +19,9 @@ public class Chunk
 
     // List to store all subchunks
     public Dictionary<Vector3, Subchunk> Subchunks { get; private set; }
+
+    private IOrderedEnumerable<KeyValuePair<Vector3, Subchunk>> sortedSubchunks;
+    private static readonly Vector3 subchunkCenterModifier = new(Subchunk.Size / 2, Subchunk.Size / 2, Subchunk.Size / 2);
 
     public Chunk(Vector3 position)
     {
@@ -56,13 +60,17 @@ public class Chunk
 
     public void DrawOpaque(Effect effect)
     {
-        foreach (KeyValuePair<Vector3, Subchunk> item in Subchunks)
+        sortedSubchunks = Subchunks
+            .OrderByDescending(item => Vector3.DistanceSquared(MineDirtGame.Camera.Position, item.Key + subchunkCenterModifier));
+
+        foreach (var item in sortedSubchunks)
             item.Value.DrawOpaque(effect);
     }
 
     public void DrawTransparent(Effect effect)
     {
-        foreach (KeyValuePair<Vector3, Subchunk> item in Subchunks)
+        // Subchunks are already sorted from the DrawOpaque method
+        foreach (var item in sortedSubchunks)
             item.Value.DrawTransparent(effect);
     }
 }

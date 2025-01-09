@@ -301,12 +301,12 @@ public class Subchunk
                 return true;
 
             return World.TryGetBlock(subchunkPos, wrappedNbIndex, out Block oNbBlock)
-                && block.IsOpaque && !oNbBlock.IsOpaque || (!block.IsOpaque && !oNbBlock.IsOpaque && (block.Type != oNbBlock.Type));
+                && !(oNbBlock.Type == block.Type || oNbBlock.IsOpaque);
         }
 
         Block nbBlock = Blocks[wrappedNbIndex];
 
-        return block.IsOpaque && !nbBlock.IsOpaque || (!block.IsOpaque && !nbBlock.IsOpaque && (block.Type != nbBlock.Type));
+        return !(nbBlock.Type == block.Type || nbBlock.IsOpaque);
     }
 
     public bool GetBlockSubchunkNeighbour(int index, out List<Vector3> subchunkPos)

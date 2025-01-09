@@ -195,7 +195,8 @@ public class MineDirtGame : Game
 
         blockShader.Parameters["WorldViewProjection"].SetValue(Camera.View * Camera.Projection);
 
-        World.DrawChunks(blockShader);
+        World.DrawChunksOpaque(blockShader);
+        World.DrawChunksTransparent(blockShader);
 
         _spriteBatch.Begin();
         _spriteBatch.Draw(Crosshair, CrosshairPosition, Color.White);

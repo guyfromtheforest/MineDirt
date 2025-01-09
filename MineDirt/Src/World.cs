@@ -10,6 +10,8 @@ namespace MineDirt.Src;
 public static class World
 {
     public static ConcurrentDictionary<Vector3, Chunk> Chunks = [];
+    private static IOrderedEnumerable<KeyValuePair<Vector3, Chunk>> sortedChunks; 
+    private static readonly Vector3 chunkCenterModifier = new(Subchunk.Size / 2, 0, Subchunk.Size / 2);
 
     public static short RenderDistance { get; private set; } = 16;
 
@@ -32,6 +34,7 @@ public static class World
         lastCameraChunkPosition = new(0, -1, 0);
         Chunks.Clear();
     }
+
 
     public static void BreakBlock(Vector3 position)
     {
@@ -201,25 +204,48 @@ public static class World
         }
     }
 
-    public static void DrawChunks(Effect effect)
+    public static void DrawChunksOpaque(Effect effect)
     {
         // Get the camera's frustum
         BoundingFrustum frustum = new(MineDirtGame.Camera.View * MineDirtGame.Camera.Projection);
+        sortedChunks = Chunks.OrderByDescending(item => Vector3.DistanceSquared(MineDirtGame.Camera.Position, item.Key + chunkCenterModifier));
 
-        foreach (Chunk chunk in Chunks.Values)
+        foreach (var chunk in sortedChunks)
         {
             // Create a bounding box for the subchunk
             BoundingBox chunkBoundingBox = new(
-                chunk.Position - new Vector3(Subchunk.Size, Chunk.Height, Subchunk.Size),
-                chunk.Position + new Vector3(Subchunk.Size, Chunk.Height, Subchunk.Size)
+                chunk.Value.Position - new Vector3(Subchunk.Size, Chunk.Height, Subchunk.Size),
+                chunk.Value.Position + new Vector3(Subchunk.Size, Chunk.Height, Subchunk.Size)
             );
 
             // Check if the bounding box is inside the frustum
             if (frustum.Contains(chunkBoundingBox) != ContainmentType.Disjoint)
             {
                 // Only draw subchunks within the frustum
-                chunk.DrawOpaque(effect);
-                chunk.DrawTransparent(effect);
+                chunk.Value.DrawOpaque(effect);
+            }
+        }
+    }
+
+    public static void DrawChunksTransparent(Effect effect)
+    {
+        // Get the camera's frustum
+        BoundingFrustum frustum = new(MineDirtGame.Camera.View * MineDirtGame.Camera.Projection);
+
+        // Chunks are already sorted from drawing the opaque blocks
+        foreach (var chunk in sortedChunks)
+        {
+            // Create a bounding box for the subchunk
+            BoundingBox chunkBoundingBox = new(
+                chunk.Value.Position - new Vector3(Subchunk.Size, Chunk.Height, Subchunk.Size),
+                chunk.Value.Position + new Vector3(Subchunk.Size, Chunk.Height, Subchunk.Size)
+            );
+
+            // Check if the bounding box is inside the frustum
+            if (frustum.Contains(chunkBoundingBox) != ContainmentType.Disjoint)
+            {
+                // Only draw subchunks within the frustum
+                chunk.Value.DrawTransparent(effect);
             }
         }
     }
