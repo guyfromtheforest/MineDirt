@@ -155,9 +155,17 @@ public class MineDirtGame : Game
                     World.BreakBlock(Camera.PointedBlockPosition);
                 }
             }
-            else if (mouseState.RightButton == ButtonState.Pressed)
+            else if (mouseState.RightButton == ButtonState.Pressed && !mouseRightWasDown)
             {
                 mouseRightWasDown = true;
+                Block block = new()
+                {
+                    Type = BlockType.Cobblestone
+                };
+
+                block.SetBlockOpacity(true);
+
+                World.PlaceBlock(Camera.PointedBlockPosition + Camera.PointedBlockFace, block);
             }
         }
 

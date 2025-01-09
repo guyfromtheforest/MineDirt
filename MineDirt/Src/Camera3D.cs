@@ -27,6 +27,7 @@ public class Camera3D
     public static float ReachDistance { get; set; } = 20.0f;
     public Block PointedBlock { get; set; }
     public Vector3 PointedBlockPosition;
+    public Vector3 PointedBlockFace;
 
     public Camera3D(Vector3 position, float aspectRatio)
     {
@@ -167,8 +168,11 @@ public class Camera3D
         Vector3 rayPosition = Position;
         Vector3 rayDirection = Vector3.Normalize(Forward);
 
+        Vector3 lastPosition = Vector3.Zero; // Store the previous position for face calculation
+
         for (float t = 0; t < ReachDistance; t += 0.2f) // Adjust step size for precision/performance
         {
+            lastPosition = rayPosition; // Store the previous ray position
             rayPosition += rayDirection * 0.2f;
             Vector3 blockPos = Vector3.Floor(rayPosition); // Round down to get block coordinates
 
@@ -179,13 +183,19 @@ public class Camera3D
 
                 PointedBlockPosition = blockPos; // Set the pointed block coordinates
                 PointedBlock = block; // Set the pointed block
+
+                // Calculate the face being pointed at
+                Vector3 hitFace = Vector3.Floor(rayPosition) - Vector3.Floor(lastPosition);
+                PointedBlockFace = new Vector3((int)hitFace.X * -1, (int)hitFace.Y * -1, (int)hitFace.Z * -1); // Store the face vector
                 return;
             }
         }
 
         PointedBlockPosition = default;
         PointedBlock = default;
+        PointedBlockFace = default; // Clear the face when no block is pointed at
     }
+
 
     public void DrawBoundingBox(
         BoundingBox box,

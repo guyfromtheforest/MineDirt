@@ -43,6 +43,43 @@ public static class World
                 subchunk.Blocks[index] = default;
                 chunk.IsUpdatingBuffers = true;
                 chunk.GenerateSubchunkBuffers();
+                subchunk.BlockCount--;
+
+                if (subchunk.GetBlockSubchunkNeighbour(index, out List<Vector3> subchunkNbPositions))
+                {
+                    foreach (Vector3 subchunkNbPos in subchunkNbPositions)
+                    {
+                        if (Chunks.TryGetValue(subchunkNbPos.ToChunkPosition(), out Chunk chunkNb))
+                        {
+                            if (chunkNb.Subchunks.TryGetValue(subchunkNbPos, out Subchunk subchunkNb))
+                            {
+                                chunkNb.IsUpdatingBuffers = true;
+                                chunkNb.GenerateSubchunkBuffers();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public static void PlaceBlock(Vector3 position, Block block)
+    {
+        if(position.Y > Chunk.Height)
+            return;
+
+        if (Chunks.TryGetValue(position.ToChunkPosition(), out Chunk chunk))
+        {
+            if (chunk.Subchunks.TryGetValue(position.ToSubchunkPosition(), out Subchunk subchunk))
+            {
+                int index = position.ToSubchunkRelativePosition().ToIndex();
+                if (subchunk.Blocks[index].Type != BlockType.Air)
+                    return; 
+
+                subchunk.Blocks[index] = block;
+                chunk.IsUpdatingBuffers = true;
+                chunk.GenerateSubchunkBuffers();
+                subchunk.BlockCount++;
 
                 if (subchunk.GetBlockSubchunkNeighbour(index, out List<Vector3> subchunkNbPositions))
                 {

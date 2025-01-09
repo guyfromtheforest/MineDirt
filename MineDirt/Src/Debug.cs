@@ -130,6 +130,7 @@ public class Debug
             // Display the pointed block 
             ImGui.Text($"Pointed Block: {MineDirtGame.Camera.PointedBlock.Type}");
             ImGui.Text($"Pointed Block Coords: {MineDirtGame.Camera.PointedBlockPosition}");
+            ImGui.Text($"Pointed Block Face: {MineDirtGame.Camera.PointedBlockFace}");
 
             // Display the camera's position in the window
             ImGui.Text($"X: {MineDirtGame.Camera.Position.X}, Y: {MineDirtGame.Camera.Position.Y}, Z: {MineDirtGame.Camera.Position.Z}");
