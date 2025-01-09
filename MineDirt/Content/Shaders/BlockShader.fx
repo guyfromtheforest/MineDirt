@@ -20,6 +20,7 @@ struct VertexInput
     //uint V : TEXCOORD1; // UV V (byte)
     float3 Position : POSITION0; // Position (byte)
     float2 TexCoord : TEXCOORD0; // UV (byte)
+    float Light : COLOR0; // Light value
 };
 
 // Vertex output structure
@@ -27,6 +28,7 @@ struct VertexOutput
 {
     float4 Position : POSITION; // Transformed position
     float2 TexCoord : TEXCOORD0; // Passed-through texture coordinates
+    float Light : COLOR0; // Light value
 };
 
 // Vertex shader
@@ -62,6 +64,7 @@ VertexOutput VS_Main(VertexInput input)
     // Decompress UVs
     // output.TexCoord = input.TexCoord * UVScale;
     output.TexCoord = input.TexCoord;
+    output.Light = input.Light;
     
     return output;
 }
@@ -69,10 +72,14 @@ VertexOutput VS_Main(VertexInput input)
 // Pixel shader
 float4 PS_Main(VertexOutput input) : COLOR
 {
-    // Just output a basic color for now
-    return tex2D(TextureSampler, input.TexCoord);
-}
+    // Sample the texture
+    float4 color = tex2D(TextureSampler, input.TexCoord);
 
+    // Apply the light value to the color
+    color.rgb *= input.Light; // Modulate RGB channels by the light value
+
+    return color;
+}
 // Techniques
 technique BasicTechnique
 {

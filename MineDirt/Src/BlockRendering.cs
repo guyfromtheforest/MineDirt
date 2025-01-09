@@ -11,6 +11,11 @@ public static class BlockRendering
 
     public static QuantizedVertex[] Vertices(Vector3 pos, BlockType blockType)
     {
+        float light1 = 1f;
+        float light2 = 0.9f;
+        float light3 = 0.8f;
+        float light4 = 0.7f;
+
         Vector3[] positions = [
                 new Vector3(pos.X - 0f, pos.Y + 1f, pos.Z - 0f),
                 new Vector3(pos.X + 1f, pos.Y + 1f, pos.Z - 0f),
@@ -25,156 +30,156 @@ public static class BlockRendering
         if (textures[blockType].Length == 1)
             return [
             // Front face (using the side texture)
-            new QuantizedVertex(positions[0], textures[blockType][0][0]), // top-left
-            new QuantizedVertex(positions[2], textures[blockType][0][2]), // bottom-left
-            new QuantizedVertex(positions[1], textures[blockType][0][1]),  // top-right
-            new QuantizedVertex(positions[3], textures[blockType][0][3]),  // bottom-right
+            new QuantizedVertex(positions[0], textures[blockType][0][0], light2), // top-left
+            new QuantizedVertex(positions[2], textures[blockType][0][2], light2), // bottom-left
+            new QuantizedVertex(positions[1], textures[blockType][0][1], light2),  // top-right
+            new QuantizedVertex(positions[3], textures[blockType][0][3], light2),  // bottom-right
 
             // Back face (using the side texture)
-            new QuantizedVertex(positions[4], textures[blockType][0][0]),  // top-left
-            new QuantizedVertex(positions[5], textures[blockType][0][1]),   // top-right
-            new QuantizedVertex(positions[6], textures[blockType][0][2]),  // bottom-left
-            new QuantizedVertex(positions[7], textures[blockType][0][3]),   // bottom-right
+            new QuantizedVertex(positions[4], textures[blockType][0][0], light1),  // top-left
+            new QuantizedVertex(positions[5], textures[blockType][0][1], light1),   // top-right
+            new QuantizedVertex(positions[6], textures[blockType][0][2], light1),  // bottom-left
+            new QuantizedVertex(positions[7], textures[blockType][0][3], light1),   // bottom-right
 
             // Left face (using the side texture)
-            new QuantizedVertex(positions[0], textures[blockType][0][0]),  // top-left
-            new QuantizedVertex(positions[4], textures[blockType][0][1]),   // top-right
-            new QuantizedVertex(positions[2], textures[blockType][0][2]),  // bottom-left
-            new QuantizedVertex(positions[6], textures[blockType][0][3]),   // bottom-right
+            new QuantizedVertex(positions[0], textures[blockType][0][0], light1),  // top-left
+            new QuantizedVertex(positions[4], textures[blockType][0][1], light1),   // top-right
+            new QuantizedVertex(positions[2], textures[blockType][0][2], light1),  // bottom-left
+            new QuantizedVertex(positions[6], textures[blockType][0][3], light1),   // bottom-right
 
             // Right face (using the side texture)
-            new QuantizedVertex(positions[1], textures[blockType][0][0]),  // top-left
-            new QuantizedVertex(positions[3], textures[blockType][0][2]),  // bottom-left
-            new QuantizedVertex(positions[5], textures[blockType][0][1]),   // top-right
-            new QuantizedVertex(positions[7], textures[blockType][0][3]),   // bottom-right
+            new QuantizedVertex(positions[1], textures[blockType][0][0], light3),  // top-left
+            new QuantizedVertex(positions[3], textures[blockType][0][2], light3),  // bottom-left
+            new QuantizedVertex(positions[5], textures[blockType][0][1], light3),   // top-right
+            new QuantizedVertex(positions[7], textures[blockType][0][3], light3),   // bottom-right
 
             // Top face (using the top texture)
-            new QuantizedVertex(positions[0], textures[blockType][0][0]),  // top-left
-            new QuantizedVertex(positions[1], textures[blockType][0][1]),   // top-right
-            new QuantizedVertex(positions[4], textures[blockType][0][2]),   // bottom-left
-            new QuantizedVertex(positions[5], textures[blockType][0][3]),    // bottom-right
+            new QuantizedVertex(positions[0], textures[blockType][0][0], light1),  // top-left
+            new QuantizedVertex(positions[1], textures[blockType][0][1], light1),   // top-right
+            new QuantizedVertex(positions[4], textures[blockType][0][2], light1),   // bottom-left
+            new QuantizedVertex(positions[5], textures[blockType][0][3], light1),    // bottom-right
 
             // Bottom face (using the bottom texture)
-            new QuantizedVertex(positions[2], textures[blockType][0][0]), // top-left
-            new QuantizedVertex(positions[6], textures[blockType][0][2]),  // bottom-left
-            new QuantizedVertex(positions[3], textures[blockType][0][1]),  // top-right
-            new QuantizedVertex(positions[7], textures[blockType][0][3])    // bottom-right
+            new QuantizedVertex(positions[2], textures[blockType][0][0], light4), // top-left
+            new QuantizedVertex(positions[6], textures[blockType][0][2], light4),  // bottom-left
+            new QuantizedVertex(positions[3], textures[blockType][0][1], light4),  // top-right
+            new QuantizedVertex(positions[7], textures[blockType][0][3], light4)    // bottom-right
         ];
 
         if (textures[blockType].Length == 2)
             return [
             // Front face (using the side texture)
-            new QuantizedVertex(positions[0], textures[blockType][0][0]), // top-left
-            new QuantizedVertex(positions[2], textures[blockType][0][2]), // bottom-left
-            new QuantizedVertex(positions[1], textures[blockType][0][1]),  // top-right
-            new QuantizedVertex(positions[3], textures[blockType][0][3]),  // bottom-right
+            new QuantizedVertex(positions[0], textures[blockType][0][0], light2), // top-left
+            new QuantizedVertex(positions[2], textures[blockType][0][2], light2), // bottom-left
+            new QuantizedVertex(positions[1], textures[blockType][0][1], light2),  // top-right
+            new QuantizedVertex(positions[3], textures[blockType][0][3], light2),  // bottom-right
 
             // Back face (using the side texture)
-            new QuantizedVertex(positions[4], textures[blockType][0][0]),  // top-left
-            new QuantizedVertex(positions[5], textures[blockType][0][1]),   // top-right
-            new QuantizedVertex(positions[6], textures[blockType][0][2]),  // bottom-left
-            new QuantizedVertex(positions[7], textures[blockType][0][3]),   // bottom-right
+            new QuantizedVertex(positions[4], textures[blockType][0][0], light1),  // top-left
+            new QuantizedVertex(positions[5], textures[blockType][0][1], light1),   // top-right
+            new QuantizedVertex(positions[6], textures[blockType][0][2], light1),  // bottom-left
+            new QuantizedVertex(positions[7], textures[blockType][0][3], light1),   // bottom-right
 
             // Left face (using the side texture)
-            new QuantizedVertex(positions[0], textures[blockType][0][0]),  // top-left
-            new QuantizedVertex(positions[4], textures[blockType][0][1]),   // top-right
-            new QuantizedVertex(positions[2], textures[blockType][0][2]),  // bottom-left
-            new QuantizedVertex(positions[6], textures[blockType][0][3]),   // bottom-right
+            new QuantizedVertex(positions[0], textures[blockType][0][0], light3),  // top-left
+            new QuantizedVertex(positions[4], textures[blockType][0][1], light3),   // top-right
+            new QuantizedVertex(positions[2], textures[blockType][0][2], light3),  // bottom-left
+            new QuantizedVertex(positions[6], textures[blockType][0][3], light3),   // bottom-right
 
             // Right face (using the side texture)
-            new QuantizedVertex(positions[1], textures[blockType][0][0]),  // top-left
-            new QuantizedVertex(positions[3], textures[blockType][0][2]),  // bottom-left
-            new QuantizedVertex(positions[5], textures[blockType][0][1]),   // top-right
-            new QuantizedVertex(positions[7], textures[blockType][0][3]),   // bottom-right
+            new QuantizedVertex(positions[1], textures[blockType][0][0], light1),  // top-left
+            new QuantizedVertex(positions[3], textures[blockType][0][2], light1),  // bottom-left
+            new QuantizedVertex(positions[5], textures[blockType][0][1], light1),   // top-right
+            new QuantizedVertex(positions[7], textures[blockType][0][3], light1),   // bottom-right
 
             // Top face (using the top texture)
-            new QuantizedVertex(positions[0], textures[blockType][1][0]),  // top-left
-            new QuantizedVertex(positions[1], textures[blockType][1][1]),   // top-right
-            new QuantizedVertex(positions[4], textures[blockType][1][2]),   // bottom-left
-            new QuantizedVertex(positions[5], textures[blockType][1][3]),    // bottom-right
+            new QuantizedVertex(positions[0], textures[blockType][1][0], light1),  // top-left
+            new QuantizedVertex(positions[1], textures[blockType][1][1], light1),   // top-right
+            new QuantizedVertex(positions[4], textures[blockType][1][2], light1),   // bottom-left
+            new QuantizedVertex(positions[5], textures[blockType][1][3], light1),    // bottom-right
 
             // Bottom face (using the bottom texture)
-            new QuantizedVertex(positions[2], textures[blockType][1][0]), // top-left
-            new QuantizedVertex(positions[6], textures[blockType][1][2]),  // bottom-left
-            new QuantizedVertex(positions[3], textures[blockType][1][1]),  // top-right
-            new QuantizedVertex(positions[7], textures[blockType][1][3])    // bottom-right
+            new QuantizedVertex(positions[2], textures[blockType][1][0], light4), // top-left
+            new QuantizedVertex(positions[6], textures[blockType][1][2], light4),  // bottom-left
+            new QuantizedVertex(positions[3], textures[blockType][1][1], light4),  // top-right
+            new QuantizedVertex(positions[7], textures[blockType][1][3], light4)    // bottom-right
         ];
 
         if (textures[blockType].Length == 3)
             return [
             // Front face (using the side texture)
-            new QuantizedVertex(positions[0], textures[blockType][0][0]), // top-left
-            new QuantizedVertex(positions[2], textures[blockType][0][2]), // bottom-left
-            new QuantizedVertex(positions[1], textures[blockType][0][1]),  // top-right
-            new QuantizedVertex(positions[3], textures[blockType][0][3]),  // bottom-right
+            new QuantizedVertex(positions[0], textures[blockType][0][0], light2), // top-left
+            new QuantizedVertex(positions[2], textures[blockType][0][2], light2), // bottom-left
+            new QuantizedVertex(positions[1], textures[blockType][0][1], light2),  // top-right
+            new QuantizedVertex(positions[3], textures[blockType][0][3], light2),  // bottom-right
 
             // Back face (using the side texture)
-            new QuantizedVertex(positions[4], textures[blockType][0][0]),  // top-left
-            new QuantizedVertex(positions[5], textures[blockType][0][1]),   // top-right
-            new QuantizedVertex(positions[6], textures[blockType][0][2]),  // bottom-left
-            new QuantizedVertex(positions[7], textures[blockType][0][3]),   // bottom-right
+            new QuantizedVertex(positions[4], textures[blockType][0][0], light1),  // top-left
+            new QuantizedVertex(positions[5], textures[blockType][0][1], light1),   // top-right
+            new QuantizedVertex(positions[6], textures[blockType][0][2], light1),  // bottom-left
+            new QuantizedVertex(positions[7], textures[blockType][0][3], light1),   // bottom-right
 
             // Left face (using the side texture)
-            new QuantizedVertex(positions[0], textures[blockType][0][0]),  // top-left
-            new QuantizedVertex(positions[4], textures[blockType][0][1]),   // top-right
-            new QuantizedVertex(positions[2], textures[blockType][0][2]),  // bottom-left
-            new QuantizedVertex(positions[6], textures[blockType][0][3]),   // bottom-right
+            new QuantizedVertex(positions[0], textures[blockType][0][0], light3),  // top-left
+            new QuantizedVertex(positions[4], textures[blockType][0][1], light3),   // top-right
+            new QuantizedVertex(positions[2], textures[blockType][0][2], light3),  // bottom-left
+            new QuantizedVertex(positions[6], textures[blockType][0][3], light3),   // bottom-right
 
             // Right face (using the side texture)
-            new QuantizedVertex(positions[1], textures[blockType][0][0]),  // top-left
-            new QuantizedVertex(positions[3], textures[blockType][0][2]),  // bottom-left
-            new QuantizedVertex(positions[5], textures[blockType][0][1]),   // top-right
-            new QuantizedVertex(positions[7], textures[blockType][0][3]),   // bottom-right
+            new QuantizedVertex(positions[1], textures[blockType][0][0], light1),  // top-left
+            new QuantizedVertex(positions[3], textures[blockType][0][2], light1),  // bottom-left
+            new QuantizedVertex(positions[5], textures[blockType][0][1], light1),   // top-right
+            new QuantizedVertex(positions[7], textures[blockType][0][3], light1),   // bottom-right
 
             // Top face (using the top texture)
-            new QuantizedVertex(positions[0], textures[blockType][1][0]),  // top-left
-            new QuantizedVertex(positions[1], textures[blockType][1][1]),   // top-right
-            new QuantizedVertex(positions[4], textures[blockType][1][2]),   // bottom-left
-            new QuantizedVertex(positions[5], textures[blockType][1][3]),    // bottom-right
+            new QuantizedVertex(positions[0], textures[blockType][1][0], light1),  // top-left
+            new QuantizedVertex(positions[1], textures[blockType][1][1], light1),   // top-right
+            new QuantizedVertex(positions[4], textures[blockType][1][2], light1),   // bottom-left
+            new QuantizedVertex(positions[5], textures[blockType][1][3], light1),    // bottom-right
 
             // Bottom face (using the bottom texture)
-            new QuantizedVertex(positions[2], textures[blockType][2][0]), // top-left
-            new QuantizedVertex(positions[6], textures[blockType][2][2]),  // bottom-left
-            new QuantizedVertex(positions[3], textures[blockType][2][1]),  // top-right
-            new QuantizedVertex(positions[7], textures[blockType][2][3])    // bottom-right
+            new QuantizedVertex(positions[2], textures[blockType][2][0], light4), // top-left
+            new QuantizedVertex(positions[6], textures[blockType][2][2], light4),  // bottom-left
+            new QuantizedVertex(positions[3], textures[blockType][2][1], light4),  // top-right
+            new QuantizedVertex(positions[7], textures[blockType][2][3], light4)    // bottom-right
         ];
 
         return [
             // Front face (using the side texture)
-            new QuantizedVertex(positions[0], textures[blockType][0][0]), // top-left
-            new QuantizedVertex(positions[2], textures[blockType][0][2]), // bottom-left
-            new QuantizedVertex(positions[1], textures[blockType][0][1]),  // top-right
-            new QuantizedVertex(positions[3], textures[blockType][0][3]),  // bottom-right
+            new QuantizedVertex(positions[0], textures[blockType][0][0], light2), // top-left
+            new QuantizedVertex(positions[2], textures[blockType][0][2], light2), // bottom-left
+            new QuantizedVertex(positions[1], textures[blockType][0][1], light2),  // top-right
+            new QuantizedVertex(positions[3], textures[blockType][0][3], light2),  // bottom-right
 
             // Back face (using the side texture)
-            new QuantizedVertex(positions[4], textures[blockType][1][0]),  // top-left
-            new QuantizedVertex(positions[5], textures[blockType][1][1]),   // top-right
-            new QuantizedVertex(positions[6], textures[blockType][1][2]),  // bottom-left
-            new QuantizedVertex(positions[7], textures[blockType][1][3]),   // bottom-right
+            new QuantizedVertex(positions[4], textures[blockType][1][0], light1),  // top-left
+            new QuantizedVertex(positions[5], textures[blockType][1][1], light1),   // top-right
+            new QuantizedVertex(positions[6], textures[blockType][1][2], light1),  // bottom-left
+            new QuantizedVertex(positions[7], textures[blockType][1][3], light1),   // bottom-right
 
             // Left face (using the side texture)
-            new QuantizedVertex(positions[0], textures[blockType][2][0]),  // top-left
-            new QuantizedVertex(positions[4], textures[blockType][2][1]),   // top-right
-            new QuantizedVertex(positions[2], textures[blockType][2][2]),  // bottom-left
-            new QuantizedVertex(positions[6], textures[blockType][2][3]),   // bottom-right
+            new QuantizedVertex(positions[0], textures[blockType][2][0], light3),  // top-left
+            new QuantizedVertex(positions[4], textures[blockType][2][1], light3),   // top-right
+            new QuantizedVertex(positions[2], textures[blockType][2][2], light3),  // bottom-left
+            new QuantizedVertex(positions[6], textures[blockType][2][3], light3),   // bottom-right
 
             // Right face (using the side texture)
-            new QuantizedVertex(positions[1], textures[blockType][3][0]),  // top-left
-            new QuantizedVertex(positions[3], textures[blockType][3][2]),  // bottom-left
-            new QuantizedVertex(positions[5], textures[blockType][3][1]),   // top-right
-            new QuantizedVertex(positions[7], textures[blockType][3][3]),   // bottom-right
+            new QuantizedVertex(positions[1], textures[blockType][3][0], light1),  // top-left
+            new QuantizedVertex(positions[3], textures[blockType][3][2], light1),  // bottom-left
+            new QuantizedVertex(positions[5], textures[blockType][3][1], light1),   // top-right
+            new QuantizedVertex(positions[7], textures[blockType][3][3], light1),   // bottom-right
 
             // Top face (using the top texture)
-            new QuantizedVertex(positions[0], textures[blockType][4][0]),  // top-left
-            new QuantizedVertex(positions[1], textures[blockType][4][1]),   // top-right
-            new QuantizedVertex(positions[4], textures[blockType][4][2]),   // bottom-left
-            new QuantizedVertex(positions[5], textures[blockType][4][3]),    // bottom-right
+            new QuantizedVertex(positions[0], textures[blockType][4][0], light1),  // top-left
+            new QuantizedVertex(positions[1], textures[blockType][4][1], light1),   // top-right
+            new QuantizedVertex(positions[4], textures[blockType][4][2], light1),   // bottom-left
+            new QuantizedVertex(positions[5], textures[blockType][4][3], light1),    // bottom-right
 
             // Bottom face (using the bottom texture)
-            new QuantizedVertex(positions[2], textures[blockType][5][0]), // top-left
-            new QuantizedVertex(positions[6], textures[blockType][5][2]),  // bottom-left
-            new QuantizedVertex(positions[3], textures[blockType][5][1]),  // top-right
-            new QuantizedVertex(positions[7], textures[blockType][5][3])    // bottom-right
+            new QuantizedVertex(positions[2], textures[blockType][5][0], light4), // top-left
+            new QuantizedVertex(positions[6], textures[blockType][5][2], light4),  // bottom-left
+            new QuantizedVertex(positions[3], textures[blockType][5][1], light4),  // top-right
+            new QuantizedVertex(positions[7], textures[blockType][5][3], light4)    // bottom-right
         ];
     }
 

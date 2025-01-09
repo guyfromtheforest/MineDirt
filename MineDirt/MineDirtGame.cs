@@ -189,6 +189,7 @@ public class MineDirtGame : Game
         GraphicsDevice.Clear(Color.CornflowerBlue);
         GraphicsDevice.SamplerStates[0] = SamplerState.PointClamp;
         GraphicsDevice.DepthStencilState = DepthStencilState.Default;
+        GraphicsDevice.BlendState = BlendState.AlphaBlend;
 
         effect.View = Camera.View;
         effect.Projection = Camera.Projection;
