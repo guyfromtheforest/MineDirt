@@ -224,6 +224,7 @@ public class Subchunk
                 allVertices.Count,
                 BufferUsage.WriteOnly
             );
+
             VertexBuffer.SetData(allVertices.ToArray());
 
             IndexBuffer = new IndexBuffer(

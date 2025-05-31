@@ -16,7 +16,7 @@ public class MineDirtGame : Game
     public static GraphicsDeviceManager Graphics;
     public static bool IsMouseCursorVisible = false;
 
-    public static Camera3D Camera;
+    public static Camera Camera; 
 
     public static Texture2D TextureAtlas;
     public static Texture2D Crosshair;
@@ -29,11 +29,6 @@ public class MineDirtGame : Game
     BasicEffect effect;
     Effect blockShader;
 
-    Chunk chunk;
-
-    bool mouseLeftWasDown = false;
-    bool mouseRightWasDown = false;
-
     public MineDirtGame()
     {
         Graphics = new GraphicsDeviceManager(this);
@@ -44,15 +39,12 @@ public class MineDirtGame : Game
         Graphics.SynchronizeWithVerticalRetrace = false;
         IsFixedTimeStep = false;
 
-        // Set updates per second to 30
-        TargetElapsedTime = TimeSpan.FromSeconds(1.0 / 64.0);
-
         // Set to fullscreen
         Graphics.IsFullScreen = true;
 
         // Set the resolution for fullscreen mode
-        Graphics.PreferredBackBufferWidth = 1920; // Set your preferred width
-        Graphics.PreferredBackBufferHeight = 1080; // Set your preferred height
+        Graphics.PreferredBackBufferWidth = 2560; // Set your preferred width
+        Graphics.PreferredBackBufferHeight = 1440; // Set your preferred height
         Graphics.ApplyChanges();
 
         Instance = this;
@@ -60,7 +52,7 @@ public class MineDirtGame : Game
 
     protected override void Initialize()
     {
-        Camera = new Camera3D(new Vector3(0, 100, 0), GraphicsDevice.Viewport.AspectRatio);
+        Camera = new Camera(GraphicsDevice, Window);
         World.Initialize();
 
         // Set noise parameters
@@ -142,36 +134,9 @@ public class MineDirtGame : Game
         KeyboardState keyboardState = Keyboard.GetState();
         MouseState mouseState = Mouse.GetState();
 
-        // Update the camera with the current input and GraphicsDevice for mouse centering
-        Camera.Update(gameTime, keyboardState, mouseState, GraphicsDevice);
+        Camera.Update(gameTime);
         IsMouseVisible = IsMouseCursorVisible;
-
-        // Check if player is in menu mode
-        if(Camera.IsMouseControlEnabled)
-        {
-            if(mouseState.LeftButton == ButtonState.Pressed && !mouseLeftWasDown)
-            {
-                mouseLeftWasDown = true; 
-                if(Camera.PointedBlock.Type != BlockType.Air)
-                {
-                    World.BreakBlock(Camera.PointedBlockPosition);
-                }
-            }
-            else if (mouseState.RightButton == ButtonState.Pressed && !mouseRightWasDown)
-            {
-                mouseRightWasDown = true;
-                Block block = new(BlockType.Glass);
-
-                World.PlaceBlock(Camera.PointedBlockPosition + Camera.PointedBlockFace, block);
-            }
-        }
-
-        if(mouseState.LeftButton == ButtonState.Released)
-            mouseLeftWasDown = false;
-
-        if (mouseState.RightButton == ButtonState.Released)
-            mouseRightWasDown = false;
-
+        
         World.UpdateChunks();
 
 #if DEBUG
@@ -203,15 +168,7 @@ public class MineDirtGame : Game
         _spriteBatch.Draw(Crosshair, CrosshairPosition, Color.White);
         _spriteBatch.End();
 
-        if(Camera.PointedBlock.Type != BlockType.Air)
-        {
-            BoundingBox box = new(
-                Camera.PointedBlockPosition,
-                Camera.PointedBlockPosition + Vector3.One
-            );
-
-            Camera.DrawBoundingBox(box, GraphicsDevice, effect);
-        }
+        Camera.Draw(effect);
 
         base.Draw(gameTime);
 
