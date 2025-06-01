@@ -168,7 +168,17 @@ public class MineDirtGame : Game
         _spriteBatch.Draw(Crosshair, CrosshairPosition, Color.White);
         _spriteBatch.End();
 
-        Camera.Draw(effect);
+        if (Camera.PointedBlock.Type != BlockType.Air)
+        {
+            BoundingBox box = new(
+                Camera.PointedBlockPosition,
+                Camera.PointedBlockPosition + Vector3.One
+            );
+
+            // DrawBoundingBox(box, graphicsDevice, effect);
+
+            BoundingBoxRenderer.DrawHighlightBox(box, GraphicsDevice, effect);
+        }
 
         base.Draw(gameTime);
 

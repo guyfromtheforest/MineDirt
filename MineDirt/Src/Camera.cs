@@ -86,20 +86,6 @@ public class Camera
             UpdatePointedBlock();
     }
 
-    public void Draw(BasicEffect effect)
-    {
-
-        if (PointedBlock.Type != BlockType.Air)
-        {
-            BoundingBox box = new(
-                PointedBlockPosition,
-                PointedBlockPosition + Vector3.One
-            );
-
-            DrawBoundingBox(box, graphicsDevice, effect);
-        }
-    }
-
     public float GetMovementSpeed()
     {
         if (kbState.IsKeyDown(Keys.LeftControl))
@@ -270,60 +256,4 @@ public class Camera
         PointedBlock = default;
         PointedBlockFace = default;
     }
-
-    public void DrawBoundingBox(
-        BoundingBox box,
-        GraphicsDevice graphicsDevice,
-        BasicEffect effect,
-        float offset = 0.001f
-    )
-    {
-        // Enable depth testing
-        graphicsDevice.DepthStencilState = DepthStencilState.Default;
-        box.Min -= new Vector3(offset);
-        box.Max += new Vector3(offset);
-
-        // Define the corners of the bounding box
-        Vector3[] corners = box.GetCorners();
-
-        // Create a list to hold the offset corners
-        Vector3[] offsetCorners = new Vector3[corners.Length];
-
-        // Apply the offset to each corner
-        for (int i = 0; i < corners.Length; i++)
-        {
-            // Offset each corner outward along the normal
-            // We're using a simple approach to offset each vertex along the positive/negative X, Y, Z axes
-            offsetCorners[i] = corners[i];
-        }
-
-        // Define the edges of the bounding box
-        int[] indices =
-        [
-            0, 1, 1, 2, 2, 3, 3, 0, // Bottom face
-            4, 5, 5, 6, 6, 7, 7, 4, // Top face
-            0, 4, 1, 5, 2, 6, 3, 7, // Vertical edges
-        ];
-
-        // Set up vertices for the edges
-        VertexPositionColor[] vertices = new VertexPositionColor[offsetCorners.Length];
-        for (int i = 0; i < offsetCorners.Length; i++)
-            vertices[i] = new VertexPositionColor(offsetCorners[i], Color.Black);
-
-        // Apply the basic effect
-        effect.VertexColorEnabled = true;
-        effect.CurrentTechnique.Passes[0].Apply();
-
-        // Draw the lines
-        graphicsDevice.DrawUserIndexedPrimitives(
-            PrimitiveType.LineList,
-            vertices,
-            0,
-            vertices.Length,
-            indices,
-            0,
-            indices.Length / 2
-        );
-    }
-
 }
