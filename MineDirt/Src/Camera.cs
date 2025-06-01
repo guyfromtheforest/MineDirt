@@ -56,7 +56,7 @@ public class Camera
         UpdateProjection();
     }
 
-    private void UpdateView()
+    public void UpdateView()
     {
         View = Matrix.CreateLookAt(Position, Forward + Position, Vector3.Up);
     }

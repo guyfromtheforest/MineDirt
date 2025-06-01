@@ -191,6 +191,7 @@ public class Debug
             if (ImGui.Button("Teleport"))
             {
                 MineDirtGame.Camera.Position = TeleportPos;
+                MineDirtGame.Camera.UpdateView();
             }
         }
 
