@@ -40,7 +40,7 @@ public class Debug
 
     private Vector3 cameraChunkPosition = Vector3.Zero;
 
-    private float cameraSpeed = Camera3D.MovementSpeed;
+    private float cameraSpeed = Camera.MovementUnitsPerSecond;
 
     private bool RenderWireframes = false;
 
@@ -172,7 +172,7 @@ public class Debug
             // Slider for movement speed
             ImGui.SliderFloat("Movement Speed", ref cameraSpeed, 0.1f, 50f);
 
-            Camera3D.MovementSpeed = cameraSpeed;
+            Camera.MovementUnitsPerSecond = cameraSpeed;
         }
 
         ImGui.End();

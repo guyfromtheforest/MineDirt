@@ -16,8 +16,8 @@ public class Camera
     private MouseState mState = default(MouseState);
     private KeyboardState kbState = default(KeyboardState);
 
-    public float MovementUnitsPerSecond { get; set; } = 20f;
-    public float SprintMovementUnitsPerSecond { get; set; } = 60f;
+    public static float MovementUnitsPerSecond { get; set; } = 20f;
+    public static float SprintMovementUnitsPerSecond { get; set; } = 60f;
     
     public float ReachDistance { get; set; } = 20.0f;
 
