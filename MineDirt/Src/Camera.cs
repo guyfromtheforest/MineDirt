@@ -18,7 +18,7 @@ public class Camera
 
     public static float MovementUnitsPerSecond { get; set; } = 20f;
     public static float SprintMovementUnitsPerSecond { get; set; } = 60f;
-    
+
     public float ReachDistance { get; set; } = 20.0f;
 
     public float RotationSpeed { get; set; } = 0.005f;
@@ -34,11 +34,11 @@ public class Camera
     public Matrix View = Matrix.Identity;
     public Matrix Projection = Matrix.Identity;
 
-    public Vector3 Position;
+    public Vector3 Position = new(0, 100, 0);
 
     public Vector3 Forward;
     public Matrix RotationMatrix;
-    
+
     public Block PointedBlock { get; set; }
     public Vector3 PointedBlockPosition;
     public Vector3 PointedBlockFace;
@@ -46,7 +46,7 @@ public class Camera
     private bool wasMenuModeToggleKeyPressed = false;
     private bool mouseLeftWasDown = false;
     private bool mouseRightWasDown = false;
-    
+
     public Camera(GraphicsDevice graphicsDevice, GameWindow gameWindow)
     {
         this.graphicsDevice = graphicsDevice;
@@ -144,7 +144,7 @@ public class Camera
             wasMenuModeToggleKeyPressed = false;
         }
 
-        return false; 
+        return false;
     }
 
     public bool HandleMovement(GameTime gameTime)
@@ -185,7 +185,7 @@ public class Camera
 
     public bool HandlePlacement(GameTime gameTime)
     {
-        bool triggered = false; 
+        bool triggered = false;
 
         // Check if player is in menu mode
         if (MouseLookEnabled)
