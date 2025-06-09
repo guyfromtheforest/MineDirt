@@ -8,7 +8,8 @@ public enum BlockType : byte
     Bedrock,
     Stone,
     Glass,
-    Water
+    Water,
+    Sand
 }
 
 public struct Block
@@ -83,7 +84,7 @@ public struct Block
     public void SetAdjacentFaceVisibility(AdjentFaceMask face, bool isVisible)
     {
         byte faceMask = (byte)face;
-
+         
         if (isVisible)
             AdjacentFacesVisibility |= faceMask;
         else

@@ -117,6 +117,7 @@ public class MineDirtGame : Game
         BlockRendering.Load(BlockType.Stone, [5]);
         BlockRendering.Load(BlockType.Glass, [34]);
         BlockRendering.Load(BlockType.Water, [35]);
+        BlockRendering.Load(BlockType.Sand, [8]);
 
 #if DEBUG
         debug.LoadContent();

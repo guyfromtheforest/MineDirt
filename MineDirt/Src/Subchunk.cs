@@ -23,16 +23,6 @@ public class Subchunk
     public int TransparentVertexCount => TransparentVertexBuffer?.VertexCount ?? 0;
     public int TransparentIndexCount => TransparentIndexBuffer?.IndexCount ?? 0;
 
-    //static readonly Vector3[] faceDirections =
-    //[
-    //    new Vector3(0, 0, -1), // Front
-    //    new Vector3(0, 0, 1), // Back
-    //    new Vector3(-1, 0, 0), // Left
-    //    new Vector3(1, 0, 0), // Right
-    //    new Vector3(0, 1, 0), // Top
-    //    new Vector3(0, -1, 0), // Bottom
-    //];
-
     public Subchunk(Chunk chunk, Vector3 position)
     {
         Position = position;
@@ -42,99 +32,92 @@ public class Subchunk
         GenerateBlocks();
     }
 
-    //int l = 16;
-    //int m = 16;
-    //int n = 16;
-
     private void GenerateBlocks()
     {
-        //for (int i = 0; i < l; i++)
-        //{
-        //    for (int j = 0; j < m; j++)
-        //    {
-        //        for (int k = 0; k < n; k++)
-        //        {
-        //            Block block = new();
-
-        //            block.Type = BlockType.Grass;
-        //            block.SetBlockOpacity(true);
-
-        //            int blockIndex = GetIndexFromX(i) + GetIndexFromY(j) + GetIndexFromZ(k);
-
-        //            Blocks[blockIndex] = block;
-        //            BlockCount++;
-        //        }
-        //    }
-        //}
-
-        //l = 0;
-        //m = 0;
-        //n = 0;
-        //return;
-
         Vector3 blockPosition;
         Vector3 worldBlockPosition;
+
+        const float terrainFrequency = 1f;
+        const float sandPatchFrequency = 2f; // Controls the size of sand patches
+
+        // --- Terrain Parameters ---
+        const int dirtLayerDepth = 3;
+        int seaLevel = Chunk.Height / 2;
+        const int beachHeight = 1; // How many blocks above sea level beaches can form
 
         for (byte x = 0; x < Size; x++)
         {
             for (byte z = 0; z < Size; z++)
             {
-                float noiseValue =
-                    Utils.ScaleNoise(
-                        MineDirtGame.Noise.GetNoise(Position.X + x, Position.Z + z),
-                        0.25f,
-                        0.75f
-                    ) * Chunk.Height;
-                int maxHeight = MathHelper.Clamp((int)Math.Round(noiseValue), 1, Chunk.Height - 1);
+                // --- PERFORM ALL NOISE CALLS HERE (ONCE PER COLUMN) ---
+                float worldX = Position.X + x;
+                float worldZ = Position.Z + z;
 
+                // 1. Primary Terrain Height
+                float heightNoise = Math.Max(MineDirtGame.Noise.GetNoise(worldX * terrainFrequency, worldZ * terrainFrequency), MineDirtGame.Noise.GetNoise(worldX * terrainFrequency * 1.25f, worldZ * terrainFrequency * 1.25f));
+                int maxHeight = (int)(Utils.ScaleNoise(heightNoise, 0.25f, 0.75f) * Chunk.Height);
+                maxHeight = MathHelper.Clamp(maxHeight, 1, Chunk.Height - 1);
+
+                // 2. Sand Patches
+                float sandNoise = MineDirtGame.Noise.GetNoise(worldX * sandPatchFrequency, worldZ * sandPatchFrequency);
+                bool createSandPatch = sandNoise > 0.25f;
+
+                // --- GENERATE THE BLOCK COLUMN ---
                 for (byte y = 0; y < Size; y++)
                 {
-                    blockPosition.X = x;
-                    blockPosition.Y = y;
-                    blockPosition.Z = z;
+                    blockPosition = new Vector3(x, y, z);
+                    worldBlockPosition.Y = Position.Y + y;
 
-                    worldBlockPosition.X = blockPosition.X + Position.X;
-                    worldBlockPosition.Y = blockPosition.Y + Position.Y;
-                    worldBlockPosition.Z = blockPosition.Z + Position.Z;
-
+                    Block block;
                     int blockIndex = GetIndexFromX(x) + GetIndexFromY(y) + GetIndexFromZ(z);
-                    Block block = new();
 
-                    if (worldBlockPosition.Y == 0)
+                    if (worldBlockPosition.Y > maxHeight)
                     {
-                        // Bedrock at the bottom layer
-                        //ChunkBlocks.Add(blockPosition, Blocks.Bedrock(blockPosition));
-                        block = new(BlockType.Bedrock);
-                        BlockCount++;
+                        // Position is ABOVE ground level, fill with Air or Water
+                        if (worldBlockPosition.Y <= seaLevel)
+                        {
+                            block = new Block(BlockType.Water);
+                            BlockCount++;
+                        }
+                        else
+                        {
+                            block = new Block(BlockType.Air);
+                        }
                     }
-                    else if (worldBlockPosition.Y < maxHeight - 10)
+                    else
                     {
-                        // Stone below the surface
-                        //ChunkBlocks.Add(blockPosition, Blocks.Stone(blockPosition));
-                        block = new(BlockType.Stone);
-                        BlockCount++;
-                    }
-                    else if (worldBlockPosition.Y < maxHeight - 1)
-                    {
-                        // Dirt below the surface
-                        //ChunkBlocks.Add(blockPosition, Blocks.Dirt(blockPosition));
-                        block = new(BlockType.Dirt);
-                        BlockCount++;
-                    }
-                    else if (worldBlockPosition.Y == maxHeight - 1)
-                    {
-                        // Grass on the surface
-                        //ChunkBlocks.Add(blockPosition, Blocks.Grass(blockPosition));
-                        block = new(BlockType.Grass);
-                        BlockCount++;
-                    }
+                        // Position is AT or BELOW ground level, fill with solid blocks
+                        BlockCount++; // We know it's a solid block, so increment count here
 
-                    if(block.Type == BlockType.Air && worldBlockPosition.Y < Chunk.Height / 2)
-                    {
-                        // Water below sea level
-                        //ChunkBlocks.Add(blockPosition, Blocks.Water(blockPosition));
-                        block = new(BlockType.Water);
-                        BlockCount++;
+                        // Check if the terrain is low enough to be a beach or seabed
+                        bool isBeachZone = maxHeight <= seaLevel + beachHeight;
+
+                        if (worldBlockPosition.Y == 0)
+                        {
+                            block = new Block(BlockType.Bedrock);
+                        }
+                        else if (createSandPatch && isBeachZone && worldBlockPosition.Y > maxHeight - dirtLayerDepth)
+                        {
+                            // If we are in a designated sand patch area (near sea level),
+                            // replace the entire topsoil layer with sand.
+                            block = new Block(BlockType.Sand);
+                        }
+                        else if (worldBlockPosition.Y == maxHeight)
+                        {
+                            // This is the surface block.
+                            // If it's not a sand beach, it's grass (above water) or dirt (underwater).
+                            block = new Block(worldBlockPosition.Y >= seaLevel ? BlockType.Grass : BlockType.Dirt);
+                        }
+                        else if (worldBlockPosition.Y > maxHeight - dirtLayerDepth)
+                        {
+                            // The standard dirt layer just below the surface.
+                            block = new Block(BlockType.Dirt);
+                        }
+                        else
+                        {
+                            // Deep underground stone layer, with variation.
+                            block = new Block(BlockType.Stone);
+                        }
                     }
 
                     Blocks[blockIndex] = block;
