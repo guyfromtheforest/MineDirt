@@ -35,12 +35,12 @@ public struct Block
 
     public static readonly short[] Faces =
     [
-        -1, // Front
-        1, // Back
-        (short)(-1 * Subchunk.Size * Subchunk.Size), // Left
-        (short)(1 * Subchunk.Size * Subchunk.Size), // Right
-        (short)(1 * Subchunk.Size), // Top
-        (short)(-1 * Subchunk.Size), // Bottom
+        (short)(-1 * Chunk.Width * Chunk.Height),   // Left     Z-
+        (short)(1 * Chunk.Width * Chunk.Height),    // Right    Z+
+        -1,                                         // Front    X-
+        1,                                          // Back     X+
+        (short)(1 * Chunk.Width),                   // Top      Y+
+        (short)(-1 * Chunk.Width),                  // Bottom   Y-
     ];
 
     public Block(BlockType type = BlockType.Air)

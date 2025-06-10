@@ -7,27 +7,20 @@ public static class Extensions
 {
     public static Vector3 ToChunkPosition(this Vector3 position) =>
         new(
-            (int)Math.Floor(position.X / Subchunk.Size) * Subchunk.Size,
+            (int)Math.Floor(position.X / Chunk.Width) * Chunk.Width,
             0,
-            (int)Math.Floor(position.Z / Subchunk.Size) * Subchunk.Size
+            (int)Math.Floor(position.Z / Chunk.Width) * Chunk.Width
         );
 
-    public static Vector3 ToSubchunkPosition(this Vector3 position) =>
-        new(
-            (int)Math.Floor(position.X / Subchunk.Size) * Subchunk.Size,
-            (int)Math.Floor(position.Y / Subchunk.Size) * Subchunk.Size,
-            (int)Math.Floor(position.Z / Subchunk.Size) * Subchunk.Size
-        );
-
-    public static Vector3 ToSubchunkRelativePosition(this Vector3 position) =>
-        new(
-            ((position.X % Subchunk.Size) + Subchunk.Size) % Subchunk.Size,
-            ((position.Y % Subchunk.Size) + Subchunk.Size) % Subchunk.Size,
-            ((position.Z % Subchunk.Size) + Subchunk.Size) % Subchunk.Size
-        );
+    public static Vector3 ToChunkRelativePosition(this Vector3 position) =>
+    new(
+        ((position.X % Chunk.Width) + Chunk.Width) % Chunk.Width,
+        ((position.Y % Chunk.Height) + Chunk.Height) % Chunk.Height,
+        ((position.Z % Chunk.Width) + Chunk.Width) % Chunk.Width
+    );
 
     public static int ToIndex(this Vector3 position) =>
-        Subchunk.GetIndexFromX((int)position.X)
-        + Subchunk.GetIndexFromY((int)position.Y)
-        + Subchunk.GetIndexFromZ((int)position.Z);
+        Chunk.GetIndexFromX((int)(position.X))
+        + Chunk.GetIndexFromY((int)(position.Y))
+        + Chunk.GetIndexFromZ((int)(position.Z));
 }

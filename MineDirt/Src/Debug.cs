@@ -81,12 +81,6 @@ public class Debug
             upsTimer -= 1f;  // Reset the timer
             updateCount = 0;
 
-            chunkUpdateCount = 0;
-            foreach (Chunk item in World.Chunks.Values)
-            {
-                chunkUpdateCount += item.UpdateCount;
-            }
-
             chunkCount = World.Chunks.Count;
 
             // Update the number of Vertices and Indices
@@ -139,7 +133,7 @@ public class Debug
             ImGui.Text($"Abs Chunk X: {cameraChunkPosition.X}, Y: {cameraChunkPosition.Y}, Z: {cameraChunkPosition.Z}");
 
             // Display the camera's chunk normalized position in the window
-            ImGui.Text($"Nor Chunk X: {cameraChunkPosition.X / Subchunk.Size}, Y: {cameraChunkPosition.Y / Subchunk.Size}, Z: {cameraChunkPosition.Z / Subchunk.Size}");
+            ImGui.Text($"Nor Chunk X: {cameraChunkPosition.X / Chunk.Width}, Y: {cameraChunkPosition.Y / Chunk.Width}, Z: {cameraChunkPosition.Z / Chunk.Width}");
 
             // Display FPS and UPS
             ImGui.Text($"FPS: {fps}");

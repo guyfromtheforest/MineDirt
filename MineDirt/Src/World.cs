@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -11,14 +12,14 @@ public static class World
 {
     public static ConcurrentDictionary<Vector3, Chunk> Chunks = [];
     private static IOrderedEnumerable<KeyValuePair<Vector3, Chunk>> sortedChunks; 
-    private static readonly Vector3 chunkCenterModifier = new(Subchunk.Size / 2, 0, Subchunk.Size / 2);
+    private static readonly Vector3 chunkCenterModifier = new(Chunk.Width / 2, 0, Chunk.Width / 2);
 
     public static short RenderDistance { get; private set; } = 16;
 
     public static long VertexCount => Chunks.Values.ToList().Sum(chunk => chunk.VertexCount);
     public static long IndexCount => Chunks.Values.ToList().Sum(chunk => chunk.IndexCount);
 
-    public static TaskProcessor WorldMeshThreadPool = new(4); // Number of threads to use for world generation and mesh building
+    public static TaskProcessor WorldMeshThreadPool = new(); // Number of threads to use for world generation and mesh building
     private const int ChunksPerFrame = 4; // Number of chunks to process per frame
 
     public static void Initialize() { }
@@ -35,31 +36,25 @@ public static class World
         Chunks.Clear();
     }
 
-
     public static void BreakBlock(Vector3 position)
     {
         if (Chunks.TryGetValue(position.ToChunkPosition(), out Chunk chunk))
         {
-            if (chunk.Subchunks.TryGetValue(position.ToSubchunkPosition(), out Subchunk subchunk))
-            {
-                int index = position.ToSubchunkRelativePosition().ToIndex();
-                subchunk.Blocks[index] = default;
-                chunk.IsUpdatingBuffers = true;
-                chunk.GenerateSubchunkBuffers();
-                subchunk.BlockCount--;
+            int index = position.ToChunkRelativePosition().ToIndex();
+            if (chunk.Blocks[index].Type == BlockType.Air)
+                return;
+            
+            chunk.Blocks[index] = default;
+            chunk.BlockCount--;
+            chunk.GenerateBuffers();
 
-                if (subchunk.GetBlockSubchunkNeighbour(index, out List<Vector3> subchunkNbPositions))
+            if (chunk.TryGetBlockChunkNeighbours(index, out List<Vector3> chunkNbPositions))
+            {
+                foreach (Vector3 chunkNbPos in chunkNbPositions)
                 {
-                    foreach (Vector3 subchunkNbPos in subchunkNbPositions)
+                    if (Chunks.TryGetValue(chunkNbPos, out Chunk chunkNb))
                     {
-                        if (Chunks.TryGetValue(subchunkNbPos.ToChunkPosition(), out Chunk chunkNb))
-                        {
-                            if (chunkNb.Subchunks.TryGetValue(subchunkNbPos, out Subchunk subchunkNb))
-                            {
-                                chunkNb.IsUpdatingBuffers = true;
-                                chunkNb.GenerateSubchunkBuffers();
-                            }
-                        }
+                        chunkNb.GenerateBuffers();
                     }
                 }
             }
@@ -68,34 +63,26 @@ public static class World
 
     public static void PlaceBlock(Vector3 position, Block block)
     {
-        if(position.Y > Chunk.Height)
+        if(position.Y > Chunk.Height || position.Y < 0)
             return;
 
         if (Chunks.TryGetValue(position.ToChunkPosition(), out Chunk chunk))
         {
-            if (chunk.Subchunks.TryGetValue(position.ToSubchunkPosition(), out Subchunk subchunk))
+            int index = position.ToChunkRelativePosition().ToIndex();
+            if (chunk.Blocks[index].Type != BlockType.Air)
+                return; 
+
+            chunk.Blocks[index] = block;
+            chunk.BlockCount++;
+            chunk.GenerateBuffers();
+
+            if (chunk.TryGetBlockChunkNeighbours(index, out List<Vector3> chunkNbPositions))
             {
-                int index = position.ToSubchunkRelativePosition().ToIndex();
-                if (subchunk.Blocks[index].Type != BlockType.Air)
-                    return; 
-
-                subchunk.Blocks[index] = block;
-                chunk.IsUpdatingBuffers = true;
-                chunk.GenerateSubchunkBuffers();
-                subchunk.BlockCount++;
-
-                if (subchunk.GetBlockSubchunkNeighbour(index, out List<Vector3> subchunkNbPositions))
+                foreach (Vector3 chunkNbPos in chunkNbPositions)
                 {
-                    foreach (Vector3 subchunkNbPos in subchunkNbPositions)
+                    if (Chunks.TryGetValue(chunkNbPos, out Chunk chunkNb))
                     {
-                        if (Chunks.TryGetValue(subchunkNbPos.ToChunkPosition(), out Chunk chunkNb))
-                        {
-                            if (chunkNb.Subchunks.TryGetValue(subchunkNbPos, out Subchunk subchunkNb))
-                            {
-                                chunkNb.IsUpdatingBuffers = true;
-                                chunkNb.GenerateSubchunkBuffers();
-                            }
-                        }
+                        chunkNb.GenerateBuffers();
                     }
                 }
             }
@@ -122,7 +109,7 @@ public static class World
             return;
 
         float renderDistanceSquared =
-            RenderDistance * RenderDistance * Subchunk.Size * Subchunk.Size;
+            RenderDistance * RenderDistance * Chunk.Width * Chunk.Width;
 
         cameraPosition.Y = 0;
 
@@ -133,15 +120,15 @@ public static class World
                 for (int z = -r; z <= r; z++)
                 {
                     Vector3 chunkPosition = new(
-                        (int)(Math.Floor(cameraPosition.X / Subchunk.Size) + x) * Subchunk.Size,
+                        (int)(Math.Floor(cameraPosition.X / Chunk.Width) + x) * Chunk.Width,
                         0, // Assuming Y is always 0 for simplicity
-                        (int)(Math.Floor(cameraPosition.Z / Subchunk.Size) + z) * Subchunk.Size
+                        (int)(Math.Floor(cameraPosition.Z / Chunk.Width) + z) * Chunk.Width
                     );
 
                     Vector3 chunkCenter = new(
-                        chunkPosition.X + (Subchunk.Size / 2),
+                        chunkPosition.X + (Chunk.Width / 2),
                         0,
-                        chunkPosition.Z + (Subchunk.Size / 2)
+                        chunkPosition.Z + (Chunk.Width / 2)
                     );
 
                     float distanceSquared = Vector3.DistanceSquared(cameraPosition, chunkCenter);
@@ -176,31 +163,18 @@ public static class World
         // Add neighboring chunks
         Vector3[] neighbors =
         [
-            new Vector3(position.X - Subchunk.Size, 0, position.Z), // West
-            new Vector3(position.X + Subchunk.Size, 0, position.Z), // East
-            new Vector3(position.X, 0, position.Z - Subchunk.Size), // South
-            new Vector3(position.X, 0, position.Z + Subchunk.Size), // North
+            new Vector3(position.X - Chunk.Width, 0, position.Z), // West
+            new Vector3(position.X + Chunk.Width, 0, position.Z), // East
+            new Vector3(position.X, 0, position.Z - Chunk.Width), // South
+            new Vector3(position.X, 0, position.Z + Chunk.Width), // North
         ];
 
         foreach (Vector3 item in neighbors)
         {
             if (Chunks.TryGetValue(item, out Chunk chunk))
             {
-                if (!chunk.IsUpdatingBuffers)
-                {
-                    chunk.IsUpdatingBuffers = true;
-                    WorldMeshThreadPool.EnqueueTask(chunk.GenerateSubchunkBuffers);
-                }
+                WorldMeshThreadPool.EnqueueTask(chunk.GenerateBuffers);
             }
-        }
-    }
-
-    private static void GenerateBuffers()
-    {
-        foreach (Chunk item in Chunks.Values)
-        {
-            if (!item.HasUpdatedBuffers)
-                item.GenerateSubchunkBuffers();
         }
     }
 
@@ -214,8 +188,8 @@ public static class World
         {
             // Create a bounding box for the subchunk
             BoundingBox chunkBoundingBox = new(
-                chunk.Value.Position - new Vector3(Subchunk.Size, Chunk.Height, Subchunk.Size),
-                chunk.Value.Position + new Vector3(Subchunk.Size, Chunk.Height, Subchunk.Size)
+                chunk.Value.Position - new Vector3(Chunk.Width, Chunk.Height, Chunk.Width),
+                chunk.Value.Position + new Vector3(Chunk.Width, Chunk.Height, Chunk.Width)
             );
 
             // Check if the bounding box is inside the frustum
@@ -237,8 +211,8 @@ public static class World
         {
             // Create a bounding box for the subchunk
             BoundingBox chunkBoundingBox = new(
-                chunk.Value.Position - new Vector3(Subchunk.Size, Chunk.Height, Subchunk.Size),
-                chunk.Value.Position + new Vector3(Subchunk.Size, Chunk.Height, Subchunk.Size)
+                chunk.Value.Position - new Vector3(Chunk.Width, Chunk.Height, Chunk.Width),
+                chunk.Value.Position + new Vector3(Chunk.Width, Chunk.Height, Chunk.Width)
             );
 
             // Check if the bounding box is inside the frustum
@@ -250,43 +224,18 @@ public static class World
         }
     }
 
-    public static bool TryGetBlock(Vector3 subchunk, int blockIndex, out Block block)
+    public static bool TryGetBlock(Vector3 position, out Block block)
     {
-        if (Chunks.TryGetValue(new Vector3(subchunk.X, 0, subchunk.Z), out Chunk chunk))
+        if(position.Y < 0 || position.Y >= Chunk.Height)
         {
-            if (chunk.Subchunks.TryGetValue(subchunk, out Subchunk subchunkValue))
-            {
-                block = subchunkValue.Blocks[blockIndex];
-
-                return true;
-            }
-
             block = default;
             return false;
         }
 
-        block = default;
-        return false;
-    }
-
-    public static bool TryGetBlock(Vector3 position, out Block block)
-    {
         if (Chunks.TryGetValue(position.ToChunkPosition(), out Chunk chunk))
         {
-            if (
-                chunk.Subchunks.TryGetValue(
-                    position.ToSubchunkPosition(),
-                    out Subchunk subchunkValue
-                )
-            )
-            {
-                block = subchunkValue.Blocks[position.ToSubchunkRelativePosition().ToIndex()];
-
-                return true;
-            }
-
-            block = default;
-            return false;
+            block = chunk.Blocks[position.ToChunkRelativePosition().ToIndex()];
+            return true;
         }
 
         block = default;

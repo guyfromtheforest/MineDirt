@@ -8,12 +8,10 @@ public class TaskProcessor
     private readonly Thread[] _workerThreads;
     private bool _isRunning = true;
 
-    public TaskProcessor(int numberOfThreads)
+    public TaskProcessor(int? numberOfThreads = null)
     {
-        if (numberOfThreads <= 0)
-            throw new ArgumentException("Number of threads must be greater than zero.", nameof(numberOfThreads));
-
-        _workerThreads = new Thread[numberOfThreads];
+        numberOfThreads ??= Environment.ProcessorCount;
+        _workerThreads = new Thread[(int)numberOfThreads];
 
         for (int i = 0; i < numberOfThreads; i++)
         {
