@@ -1,8 +1,9 @@
-﻿using System;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using MineDirt.Src;
+using System;
+using System.Threading;
 
 namespace MineDirt;
 
@@ -138,7 +139,7 @@ public class MineDirtGame : Game
         Camera.Update(gameTime);
         IsMouseVisible = IsMouseCursorVisible;
         
-        World.UpdateChunks();
+        World.Update();
 
 #if DEBUG
         debug.Update(gameTime);
@@ -186,5 +187,12 @@ public class MineDirtGame : Game
 #if DEBUG
         debug.EndDraw(gameTime);
 #endif
+    }
+
+    protected override void OnExiting(object sender, ExitingEventArgs args)
+    {
+        World.MeshThreadPool.Stop();
+
+        base.OnExiting(sender, args);
     }
 }

@@ -5,12 +5,14 @@ using System.Diagnostics;
 using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using MineDirt.Src.Chunks;
 
 namespace MineDirt.Src;
 
 public static class World
 {
     public static ConcurrentDictionary<Vector3, Chunk> Chunks = [];
+    public static ConcurrentQueue<Action> ChunkBufferGenerationQueue = new ConcurrentQueue<Action>();
     private static IOrderedEnumerable<KeyValuePair<Vector3, Chunk>> sortedChunks; 
     private static readonly Vector3 chunkCenterModifier = new(Chunk.Width / 2, 0, Chunk.Width / 2);
 
@@ -19,7 +21,7 @@ public static class World
     public static long VertexCount => Chunks.Values.ToList().Sum(chunk => chunk.VertexCount);
     public static long IndexCount => Chunks.Values.ToList().Sum(chunk => chunk.IndexCount);
 
-    public static TaskProcessor WorldMeshThreadPool = new(); // Number of threads to use for world generation and mesh building
+    public static TaskProcessor MeshThreadPool = new(); // Number of threads to use for world generation and mesh building
     private const int ChunksPerFrame = 4; // Number of chunks to process per frame
 
     public static void Initialize() { }
@@ -46,7 +48,11 @@ public static class World
             
             chunk.Blocks[index] = default;
             chunk.BlockCount--;
-            chunk.GenerateBuffers();
+            MeshThreadPool.EnqueueTask(() => {
+                ChunkMeshData meshData = chunk.GenerateMeshData();
+
+                ChunkBufferGenerationQueue.Enqueue(() => chunk.GenerateBuffers(meshData));
+            });
 
             if (chunk.TryGetBlockChunkNeighbours(index, out List<Vector3> chunkNbPositions))
             {
@@ -54,7 +60,11 @@ public static class World
                 {
                     if (Chunks.TryGetValue(chunkNbPos, out Chunk chunkNb))
                     {
-                        chunkNb.GenerateBuffers();
+                        MeshThreadPool.EnqueueTask(() => {
+                            ChunkMeshData meshData = chunkNb.GenerateMeshData();
+
+                            ChunkBufferGenerationQueue.Enqueue(() => chunkNb.GenerateBuffers(meshData));
+                        });
                     }
                 }
             }
@@ -74,7 +84,11 @@ public static class World
 
             chunk.Blocks[index] = block;
             chunk.BlockCount++;
-            chunk.GenerateBuffers();
+            MeshThreadPool.EnqueueTask(() => {
+                ChunkMeshData meshData = chunk.GenerateMeshData();
+
+                ChunkBufferGenerationQueue.Enqueue(() => chunk.GenerateBuffers(meshData));
+            });
 
             if (chunk.TryGetBlockChunkNeighbours(index, out List<Vector3> chunkNbPositions))
             {
@@ -82,15 +96,22 @@ public static class World
                 {
                     if (Chunks.TryGetValue(chunkNbPos, out Chunk chunkNb))
                     {
-                        chunkNb.GenerateBuffers();
+                        MeshThreadPool.EnqueueTask(() => {
+                            ChunkMeshData meshData = chunkNb.GenerateMeshData();
+
+                            ChunkBufferGenerationQueue.Enqueue(() => chunkNb.GenerateBuffers(meshData));
+                        });
                     }
                 }
             }
         }
     }
 
-    public static void UpdateChunks()
+    public static void Update()
     {
+        if (ChunkBufferGenerationQueue.TryDequeue(out Action generateBuffers))
+            generateBuffers();
+
         // Process chunks from the queue, limited by ChunksPerFrame
         for (int i = 0; i < ChunksPerFrame && chunkLoadQueue.Count > 0; i++)
         {
@@ -173,7 +194,11 @@ public static class World
         {
             if (Chunks.TryGetValue(item, out Chunk chunk))
             {
-                WorldMeshThreadPool.EnqueueTask(chunk.GenerateBuffers);
+                MeshThreadPool.EnqueueTask(() => {
+                    ChunkMeshData meshData = chunk.GenerateMeshData();
+
+                    ChunkBufferGenerationQueue.Enqueue(() => chunk.GenerateBuffers(meshData));
+                });
             }
         }
     }

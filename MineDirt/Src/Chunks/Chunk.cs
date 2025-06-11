@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework.Graphics;
 using MineDirt;
 using MineDirt.Src;
+using MineDirt.Src.Chunks;
 using MineDirt.Src.Noise;
 using System;
 using System.Collections.Generic;
@@ -18,10 +19,8 @@ public class Chunk
     public VertexBuffer TransparentVertexBuffer { get; private set; }
     public IndexBuffer IndexBuffer { get; private set; }
     public IndexBuffer TransparentIndexBuffer { get; private set; }
-
     public int VertexCount => VertexBuffer?.VertexCount ?? 0;
     public int IndexCount => IndexBuffer?.IndexCount ?? 0;
-
     public int TransparentVertexCount => TransparentVertexBuffer?.VertexCount ?? 0;
     public int TransparentIndexCount => TransparentIndexBuffer?.IndexCount ?? 0;
 
@@ -33,6 +32,13 @@ public class Chunk
         // Generate blocks in the chunk
         GenerateBlocks();
     }
+
+    public static int GetXFromIndex(int index) => index % Width;
+    public static int GetYFromIndex(int index) => (index / Width) % Height;
+    public static int GetZFromIndex(int index) => index / (Width * Height);
+    public static int GetIndexFromX(int x) => x;
+    public static int GetIndexFromY(int y) => y * Width;
+    public static int GetIndexFromZ(int z) => z * Width * Height;
 
     private void GenerateBlocks()
     {
@@ -128,10 +134,10 @@ public class Chunk
         }
     }
 
-    public void GenerateBuffers()
+    public ChunkMeshData GenerateMeshData()
     {
         if (BlockCount <= 0)
-            return;
+            return default;
 
         // Create vertex and index lists
         List<QuantizedVertex> allVertices = [];
@@ -201,24 +207,36 @@ public class Chunk
             Blocks[k].SetIsBitmaskBuilt(true);
         }
 
-        if (vertexOffset > 0)
+        return new ChunkMeshData()
+        {
+            Indices = allIndices,
+            Vertices = allVertices,
+            TransparentIndices = allTransparentIndices,
+            TransparentVertices = allTransparentVertices,
+        };
+    }
+
+    public void GenerateBuffers(ChunkMeshData meshData)
+    {
+        if (meshData.Indices.Count > 0)
         {
             VertexBuffer = new VertexBuffer(
                 MineDirtGame.Graphics.GraphicsDevice,
                 typeof(QuantizedVertex),
-                allVertices.Count,
+                meshData.Vertices.Count,
                 BufferUsage.WriteOnly
             );
 
-            VertexBuffer.SetData(allVertices.ToArray());
+            VertexBuffer.SetData(meshData.Vertices.ToArray());
 
             IndexBuffer = new IndexBuffer(
                 MineDirtGame.Graphics.GraphicsDevice,
                 IndexElementSize.ThirtyTwoBits,
-                allIndices.Count,
+                meshData.Indices.Count,
                 BufferUsage.WriteOnly
             );
-            IndexBuffer.SetData(allIndices.ToArray());
+
+            IndexBuffer.SetData(meshData.Indices.ToArray());
         }
         else
         {
@@ -226,23 +244,25 @@ public class Chunk
             IndexBuffer = null;
         }
 
-        if (transparentVertexOffset > 0)
+        if (meshData.TransparentIndices.Count > 0)
         {
             TransparentVertexBuffer = new VertexBuffer(
                 MineDirtGame.Graphics.GraphicsDevice,
                 typeof(QuantizedVertex),
-                allTransparentVertices.Count,
+                meshData.TransparentVertices.Count,
                 BufferUsage.WriteOnly
             );
-            TransparentVertexBuffer.SetData(allTransparentVertices.ToArray());
+            
+            TransparentVertexBuffer.SetData(meshData.TransparentVertices.ToArray());
 
             TransparentIndexBuffer = new IndexBuffer(
                 MineDirtGame.Graphics.GraphicsDevice,
                 IndexElementSize.ThirtyTwoBits,
-                allTransparentIndices.Count,
+                meshData.TransparentIndices.Count,
                 BufferUsage.WriteOnly
             );
-            TransparentIndexBuffer.SetData(allTransparentIndices.ToArray());
+
+            TransparentIndexBuffer.SetData(meshData.TransparentIndices.ToArray());
         }
         else
         {
@@ -309,13 +329,6 @@ public class Chunk
 
         return subchunkPos.Count > 0;
     }
-
-    public static int GetXFromIndex(int index) => index % Width;
-    public static int GetYFromIndex(int index) => (index / Width) % Height;
-    public static int GetZFromIndex(int index) => index / (Width * Height);
-    public static int GetIndexFromX(int x) => x;
-    public static int GetIndexFromY(int y) => y * Width;
-    public static int GetIndexFromZ(int z) => z * Width * Height;
 
     // TODO: block ordering for transparency 
     public void DrawOpaque(Effect effect)

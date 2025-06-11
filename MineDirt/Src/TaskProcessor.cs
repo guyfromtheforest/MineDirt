@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 
 public class TaskProcessor
@@ -7,7 +8,7 @@ public class TaskProcessor
     private readonly BlockingCollection<Action> _taskQueue = new();
     private readonly Thread[] _workerThreads;
     private bool _isRunning = true;
-
+    
     public TaskProcessor(int? numberOfThreads = null)
     {
         numberOfThreads ??= Environment.ProcessorCount;
@@ -25,9 +26,6 @@ public class TaskProcessor
 
     public void EnqueueTask(Action task)
     {
-        if (!_isRunning)
-            throw new InvalidOperationException("TaskProcessor is no longer running.");
-
         _taskQueue.Add(task);
     }
 
@@ -36,10 +34,11 @@ public class TaskProcessor
         _isRunning = false;
         _taskQueue.CompleteAdding();
 
+        while (_taskQueue.TryTake(out _)) { }
+
         foreach (Thread thread in _workerThreads)
         {
-            if (thread.IsAlive)
-                thread.Join(); // Wait for all threads to finish
+            thread.Join(); // Wait for all threads to finish
         }
     }
 
