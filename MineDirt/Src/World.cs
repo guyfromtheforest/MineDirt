@@ -18,9 +18,6 @@ public static class World
 
     public static short RenderDistance { get; private set; } = 16;
 
-    public static long VertexCount => Chunks.Values.ToList().Sum(chunk => chunk.VertexCount);
-    public static long IndexCount => Chunks.Values.ToList().Sum(chunk => chunk.IndexCount);
-
     public static TaskProcessor MeshThreadPool = new(); // Number of threads to use for world generation and mesh building
     private const int ChunksPerFrame = 4; // Number of chunks to process per frame
 

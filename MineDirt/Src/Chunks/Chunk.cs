@@ -19,10 +19,6 @@ public class Chunk
     public VertexBuffer TransparentVertexBuffer { get; private set; }
     public IndexBuffer IndexBuffer { get; private set; }
     public IndexBuffer TransparentIndexBuffer { get; private set; }
-    public int VertexCount => VertexBuffer?.VertexCount ?? 0;
-    public int IndexCount => IndexBuffer?.IndexCount ?? 0;
-    public int TransparentVertexCount => TransparentVertexBuffer?.VertexCount ?? 0;
-    public int TransparentIndexCount => TransparentIndexBuffer?.IndexCount ?? 0;
 
     public bool HasGeneratedTerrain { get; private set; } = false;
 
@@ -349,7 +345,7 @@ public class Chunk
                 PrimitiveType.TriangleList,
                 0,
                 0,
-                IndexCount / 3
+                IndexBuffer.IndexCount / 3
             );
         }
     }
@@ -371,7 +367,7 @@ public class Chunk
                 PrimitiveType.TriangleList,
                 0,
                 0,
-                TransparentIndexCount / 3
+                TransparentIndexBuffer.IndexCount / 3
             );
         }
     }

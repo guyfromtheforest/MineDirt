@@ -30,10 +30,6 @@ public class Debug
     private int frameCount = 0;
     private int updateCount = 0;
 
-    private long vertexCount = 0; 
-    private long indexCount = 0;    
-
-    private int chunkUpdateCount = 0;
     private int chunkCount = 0;
 
     private Vector3 TeleportPos = new(0, 0, 0);
@@ -82,10 +78,6 @@ public class Debug
             updateCount = 0;
 
             chunkCount = World.Chunks.Count;
-
-            // Update the number of Vertices and Indices
-            vertexCount = World.VertexCount;
-            indexCount = World.IndexCount;
 
             currentProcess = Process.GetCurrentProcess();
 
@@ -141,13 +133,6 @@ public class Debug
 
             // Display chunk count
             ImGui.Text($"Chunks Count: {chunkCount}");
-
-            // Chunks total update count
-            ImGui.Text($"Chunks Update Count: {chunkUpdateCount}");
-
-            // Display number of Vertices and Indices
-            ImGui.Text($"Vertices: {vertexCount}");
-            ImGui.Text($"Indices: {indexCount}");
 
             // Display memory usage information in GB
             ImGui.Text($"Working Set: {(double)workingSet / 1024 / 1024 / 1024:0.###} GB");
