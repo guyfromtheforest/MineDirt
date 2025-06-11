@@ -40,7 +40,7 @@ public static class BoundingBoxRenderer // Or place this method in your existing
         BoundingBox box,
         GraphicsDevice graphicsDevice,
         BasicEffect effect,
-        float offset = 0.002f // Slightly larger offset to ensure lines are visible over faces
+        float offset = 0.005f // Slightly larger offset to ensure lines are visible over faces
     )
     {
         // --- Common Setup ---
@@ -70,7 +70,7 @@ public static class BoundingBoxRenderer // Or place this method in your existing
         }
 
         graphicsDevice.BlendState = BlendState.Additive; // For transparency
-        graphicsDevice.DepthStencilState = DepthStencilState.DepthRead; // Read depth but don't write, so lines can draw over
+        graphicsDevice.DepthStencilState = DepthStencilState.Default; // Read depth but don't write, so lines can draw over
         graphicsDevice.RasterizerState = RasterizerState.CullCounterClockwise; // Standard culling
 
         effect.CurrentTechnique.Passes[0].Apply();
