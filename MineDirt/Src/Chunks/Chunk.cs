@@ -322,7 +322,7 @@ public class Chunk
             subchunkPos.Add(Position + (new Vector3(0, 1, 0) * Height));
 
         if (z == 0)
-            subchunkPos.Add(Position + (new Vector3(0, 1, -1) * Width));
+            subchunkPos.Add(Position + (new Vector3(0, 0, -1) * Width));
 
         if (z == Width - 1)
             subchunkPos.Add(Position + (new Vector3(0, 0, 1) * Width));
