@@ -24,13 +24,12 @@ public class Chunk
     public int TransparentVertexCount => TransparentVertexBuffer?.VertexCount ?? 0;
     public int TransparentIndexCount => TransparentIndexBuffer?.IndexCount ?? 0;
 
+    public bool HasGeneratedTerrain { get; private set; } = false;
+
     public Chunk(Vector3 position)
     {
         Position = position;
         Blocks = new Block[Width * Height * Width];
-
-        // Generate blocks in the chunk
-        GenerateBlocks();
     }
 
     public static int GetXFromIndex(int index) => index % Width;
@@ -40,7 +39,7 @@ public class Chunk
     public static int GetIndexFromY(int y) => y * Width;
     public static int GetIndexFromZ(int z) => z * Width * Height;
 
-    private void GenerateBlocks()
+    public void GenerateTerrain()
     {
         Vector3 blockPosition;
         Vector3 worldBlockPosition;
@@ -132,6 +131,8 @@ public class Chunk
                 }
             }
         }
+
+        HasGeneratedTerrain = true;
     }
 
     public ChunkMeshData GenerateMeshData()

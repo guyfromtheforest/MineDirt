@@ -13,7 +13,7 @@ public static class World
 {
     public static ConcurrentDictionary<Vector3, Chunk> Chunks = [];
     public static ConcurrentQueue<Action> ChunkBufferGenerationQueue = new ConcurrentQueue<Action>();
-    private static IOrderedEnumerable<KeyValuePair<Vector3, Chunk>> sortedChunks; 
+    private static IOrderedEnumerable<KeyValuePair<Vector3, Chunk>> sortedChunks;
     private static readonly Vector3 chunkCenterModifier = new(Chunk.Width / 2, 0, Chunk.Width / 2);
 
     public static short RenderDistance { get; private set; } = 16;
@@ -27,8 +27,6 @@ public static class World
     public static void Initialize() { }
 
     private static Vector3 lastCameraChunkPosition = new(0, -1, 0);
-
-    // public static bool done = false;
 
     private static Queue<Vector3> chunkLoadQueue = new();
 
@@ -45,10 +43,11 @@ public static class World
             int index = position.ToChunkRelativePosition().ToIndex();
             if (chunk.Blocks[index].Type == BlockType.Air)
                 return;
-            
+
             chunk.Blocks[index] = default;
             chunk.BlockCount--;
-            MeshThreadPool.EnqueueTask(() => {
+            MeshThreadPool.EnqueueTask(() =>
+            {
                 ChunkMeshData meshData = chunk.GenerateMeshData();
 
                 ChunkBufferGenerationQueue.Enqueue(() => chunk.GenerateBuffers(meshData));
@@ -60,7 +59,8 @@ public static class World
                 {
                     if (Chunks.TryGetValue(chunkNbPos, out Chunk chunkNb))
                     {
-                        MeshThreadPool.EnqueueTask(() => {
+                        MeshThreadPool.EnqueueTask(() =>
+                        {
                             ChunkMeshData meshData = chunkNb.GenerateMeshData();
 
                             ChunkBufferGenerationQueue.Enqueue(() => chunkNb.GenerateBuffers(meshData));
@@ -73,18 +73,19 @@ public static class World
 
     public static void PlaceBlock(Vector3 position, Block block)
     {
-        if(position.Y > Chunk.Height || position.Y < 0)
+        if (position.Y > Chunk.Height || position.Y < 0)
             return;
 
         if (Chunks.TryGetValue(position.ToChunkPosition(), out Chunk chunk))
         {
             int index = position.ToChunkRelativePosition().ToIndex();
             if (chunk.Blocks[index].Type != BlockType.Air)
-                return; 
+                return;
 
             chunk.Blocks[index] = block;
             chunk.BlockCount++;
-            MeshThreadPool.EnqueueTask(() => {
+            MeshThreadPool.EnqueueTask(() =>
+            {
                 ChunkMeshData meshData = chunk.GenerateMeshData();
 
                 ChunkBufferGenerationQueue.Enqueue(() => chunk.GenerateBuffers(meshData));
@@ -96,7 +97,8 @@ public static class World
                 {
                     if (Chunks.TryGetValue(chunkNbPos, out Chunk chunkNb))
                     {
-                        MeshThreadPool.EnqueueTask(() => {
+                        MeshThreadPool.EnqueueTask(() =>
+                        {
                             ChunkMeshData meshData = chunkNb.GenerateMeshData();
 
                             ChunkBufferGenerationQueue.Enqueue(() => chunkNb.GenerateBuffers(meshData));
@@ -179,8 +181,11 @@ public static class World
     {
         // Add the new chunk without generating buffers
         Chunk newChunk = new(position);
-        Chunks.TryAdd(position, newChunk);
+        if (!newChunk.HasGeneratedTerrain)
+            newChunk.GenerateTerrain();
 
+        Chunks.TryAdd(position, newChunk);
+        
         // Add neighboring chunks
         Vector3[] neighbors =
         [
@@ -194,7 +199,8 @@ public static class World
         {
             if (Chunks.TryGetValue(item, out Chunk chunk))
             {
-                MeshThreadPool.EnqueueTask(() => {
+                MeshThreadPool.EnqueueTask(() =>
+                {
                     ChunkMeshData meshData = chunk.GenerateMeshData();
 
                     ChunkBufferGenerationQueue.Enqueue(() => chunk.GenerateBuffers(meshData));
@@ -251,7 +257,7 @@ public static class World
 
     public static bool TryGetBlock(Vector3 position, out Block block)
     {
-        if(position.Y < 0 || position.Y >= Chunk.Height)
+        if (position.Y < 0 || position.Y >= Chunk.Height)
         {
             block = default;
             return false;

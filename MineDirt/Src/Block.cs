@@ -41,7 +41,7 @@ public struct Block
         1,                                          // Back     X+
         (short)(1 * Chunk.Width),                   // Top      Y+
         (short)(-1 * Chunk.Width),                  // Bottom   Y-
-    ];
+    ];  
 
     public Block(BlockType type = BlockType.Air)
     {
