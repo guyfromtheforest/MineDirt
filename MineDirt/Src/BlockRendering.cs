@@ -5,8 +5,6 @@ namespace MineDirt.Src
 {
     public static class BlockRendering
     {
-        // Your index order is fine, but this one is more standard and avoids ambiguity.
-        // Triangle 1: 0, 1, 2. Triangle 2: 0, 2, 3
         public static readonly byte[] Indices = [0, 2, 3, 0, 3, 1];
 
         // This lookup table stores the 8 corner positions of a unit cube.
@@ -38,7 +36,6 @@ namespace MineDirt.Src
         // Let's store texture coordinates in a cleaner way.
         private static Dictionary<BlockType, Vector2[][]> _textures = new();
 
-        // This method replaces your complex GetFaceVertices
         public static QuantizedVertex[] GetFaceVertices(BlockType blockType, byte faceIndex, Vector3 blockWorldPos)
         {
             var vertices = new QuantizedVertex[4];
@@ -92,7 +89,7 @@ namespace MineDirt.Src
         {
             Vector2[][] blockTextures = _textures[blockType];
 
-            // This logic maps your texture setup to the faces
+            // Map texture to the faces
             // [0]=Side, [1]=Top, [2]=Bottom
             if (blockTextures.Length == 3)
             {
@@ -118,8 +115,6 @@ namespace MineDirt.Src
             return blockTextures[faceIndex];
         }
 
-        // --- Your loading and coordinate generation methods can be simplified ---
-        // They are mostly fine, but let's clean them up to fit the new structure.
         public static void Load(BlockType blockType, byte[] textureAtlasIndices)
         {
             if (_textures.ContainsKey(blockType)) return;
@@ -143,13 +138,13 @@ namespace MineDirt.Src
             float vMax = vMin + (float)textureHeight / atlasWidth;
 
             // Return the 4 UV coords for the corners of a quad
-            return new Vector2[]
-            {
-                new(uMin, vMin), // Corresponds to Top-Left of texture
+            return
+            [
+                new(uMin, vMin), // Top-Left
                 new(uMax, vMin), // Top-Right
                 new(uMin, vMax), // Bottom-Left
                 new(uMax, vMax)  // Bottom-Right
-            };
+            ];
         }
     }
 }
