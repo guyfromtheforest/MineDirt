@@ -224,7 +224,7 @@ public class Chunk
                 BufferUsage.WriteOnly
             );
 
-            VertexBuffer.SetData(meshData.Vertices.ToArray());
+            VertexBuffer.SetData([.. meshData.Vertices]);
 
             IndexBuffer = new IndexBuffer(
                 MineDirtGame.Graphics.GraphicsDevice,
@@ -233,7 +233,7 @@ public class Chunk
                 BufferUsage.WriteOnly
             );
 
-            IndexBuffer.SetData(meshData.Indices.ToArray());
+            IndexBuffer.SetData([.. meshData.Indices]);
         }
         else
         {
@@ -247,19 +247,19 @@ public class Chunk
                 MineDirtGame.Graphics.GraphicsDevice,
                 typeof(QuantizedVertex),
                 meshData.TransparentVertices.Count,
-                BufferUsage.WriteOnly
+                BufferUsage.None
             );
-            
-            TransparentVertexBuffer.SetData(meshData.TransparentVertices.ToArray());
+
+            TransparentVertexBuffer.SetData([.. meshData.TransparentVertices]);
 
             TransparentIndexBuffer = new IndexBuffer(
                 MineDirtGame.Graphics.GraphicsDevice,
                 IndexElementSize.ThirtyTwoBits,
                 meshData.TransparentIndices.Count,
-                BufferUsage.WriteOnly
+                BufferUsage.None
             );
 
-            TransparentIndexBuffer.SetData(meshData.TransparentIndices.ToArray());
+            TransparentIndexBuffer.SetData([.. meshData.TransparentIndices]);
         }
         else
         {
@@ -349,6 +349,125 @@ public class Chunk
             );
         }
     }
+
+    struct SortableQuad
+    {
+        public QuantizedVertex V0, V1, V2, V3;
+        public float DistanceSquared;
+    }
+
+    //public void DrawTransparent(Effect effect)
+    //{
+    //    // TODO: only do this for chunks that the player is near 
+
+    //    // If we have no transparent geometry, do nothing.
+    //    if (TransparentVertexBuffer == null || TransparentIndexBuffer == null || TransparentIndexBuffer.IndexCount == 0)
+    //        return;
+
+    //    var graphicsDevice = MineDirtGame.Graphics.GraphicsDevice;
+
+    //    // ====================================================================
+    //    // STEP 1: READ GEOMETRY DATA FROM THE GPU BACK TO THE CPU (VERY SLOW!)
+    //    // ====================================================================
+
+    //    // Create CPU-side arrays to hold the data from the buffers.
+    //    var vertices = new QuantizedVertex[TransparentVertexBuffer.VertexCount];
+    //    var indices = new int[TransparentIndexBuffer.IndexCount];
+
+    //    // Copy the data from the GPU buffers into our new arrays.
+    //    TransparentVertexBuffer.GetData(vertices);
+    //    TransparentIndexBuffer.GetData(indices);
+
+    //    // ====================================================================
+    //    // STEP 2: RECONSTRUCT QUADS AND CALCULATE DISTANCE FOR SORTING
+    //    // ====================================================================
+
+    //    // This helper struct will hold a quad's data and its distance to the camera.
+    //    // It's defined locally here for simplicity.
+
+    //    var cameraPosition = MineDirtGame.Camera.Position;
+    //    var quadsToSort = new List<SortableQuad>();
+
+    //    // A quad is made of 2 triangles, which is 6 indices.
+    //    // We iterate through the index buffer, processing one quad at a time.
+    //    for (int i = 0; i < indices.Length; i += 6)
+    //    {
+    //        // Get the 4 vertices that make up this quad from the vertex array.
+    //        // A standard quad is indexed as (0,1,2) and (0,2,3).
+    //        // The indices array tells us where these vertices are in the vertices array.
+    //        QuantizedVertex v0 = vertices[indices[i + 0]];
+    //        QuantizedVertex v1 = vertices[indices[i + 1]];
+    //        QuantizedVertex v2 = vertices[indices[i + 2]];
+    //        QuantizedVertex v3 = vertices[indices[i + 5]]; // The 4th unique vertex
+
+    //        // Calculate the center of the quad to measure distance.
+    //        // NOTE: You need a way to get a Vector3 from your QuantizedVertex.
+    //        // I will assume a helper function `GetWorldPosition()` for this example.
+    //        // You MUST implement this function in your QuantizedVertex struct.
+    //        Vector3 quadCenter = (v0.Position + v1.Position + v2.Position + v3.Position) / 4f;
+
+    //        // Calculate squared distance (faster than regular distance).
+    //        float distSq = Vector3.DistanceSquared(cameraPosition, quadCenter);
+
+    //        quadsToSort.Add(new SortableQuad { V0 = v0, V1 = v1, V2 = v2, V3 = v3, DistanceSquared = distSq });
+    //    }
+
+    //    // ====================================================================
+    //    // STEP 3: SORT THE QUADS FROM BACK TO FRONT
+    //    // ====================================================================
+
+    //    quadsToSort.Sort((a, b) => b.DistanceSquared.CompareTo(a.DistanceSquared));
+
+    //    // ====================================================================
+    //    // STEP 4: REBUILD VERTEX/INDEX ARRAYS AND DRAW
+    //    // ====================================================================
+
+    //    if (quadsToSort.Count == 0)
+    //        return;
+
+    //    // Create new arrays to hold the final, sorted geometry.
+    //    var sortedVertices = new QuantizedVertex[quadsToSort.Count * 4];
+    //    var sortedIndices = new int[quadsToSort.Count * 6];
+
+    //    // Fill the arrays with the sorted quad data.
+    //    for (int i = 0; i < quadsToSort.Count; i++)
+    //    {
+    //        var quad = quadsToSort[i];
+    //        int vertexOffset = i * 4;
+    //        int indexOffset = i * 6;
+
+    //        // Add the 4 vertices
+    //        sortedVertices[vertexOffset + 0] = quad.V0;
+    //        sortedVertices[vertexOffset + 1] = quad.V1;
+    //        sortedVertices[vertexOffset + 2] = quad.V2;
+    //        sortedVertices[vertexOffset + 3] = quad.V3;
+
+    //        // Add the 6 indices for the two triangles
+    //        sortedIndices[indexOffset + 0] = vertexOffset + 0;
+    //        sortedIndices[indexOffset + 1] = vertexOffset + 1;
+    //        sortedIndices[indexOffset + 2] = vertexOffset + 2;
+    //        sortedIndices[indexOffset + 3] = vertexOffset + 0;
+    //        sortedIndices[indexOffset + 4] = vertexOffset + 2;
+    //        sortedIndices[indexOffset + 5] = vertexOffset + 3;
+    //    }
+
+    //    // Apply the shader effect
+    //    foreach (EffectPass pass in effect.CurrentTechnique.Passes)
+    //    {
+    //        pass.Apply();
+
+    //        // Draw the geometry directly from the CPU arrays.
+    //        graphicsDevice.DrawUserIndexedPrimitives(
+    //            PrimitiveType.TriangleList,
+    //            sortedVertices,      // The vertex data
+    //            0,                   // The starting vertex
+    //            sortedVertices.Length, // The number of vertices
+    //            sortedIndices,       // The index data
+    //            0,                   // The starting index
+    //            sortedIndices.Length / 3 // The number of triangles
+    //        );
+    //    }
+    //}
 
     public void DrawTransparent(Effect effect)
     {

@@ -5,9 +5,9 @@ using System;
 namespace MineDirt.Src;
 public struct QuantizedVertex : IVertexType
 {
-    Vector3 Position; 
-    Vector2 UV; 
-    float Light;
+    public Vector3 Position; 
+    public Vector2 UV; 
+    public float Light;
 
     public QuantizedVertex(Vector3 position, Vector2 uv, float light)
     {
