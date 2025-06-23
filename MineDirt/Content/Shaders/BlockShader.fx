@@ -37,14 +37,25 @@ VertexOutput VS_Main(VertexInput input)
     return output;
 }
 
-// Pixel shader
-float4 PS_Main(VertexOutput input) : COLOR
+// Pixel shader (only this function changed)
+float4 PS_Main(VertexOutput IN) : COLOR0
 {
-    // Sample the texture
-    float4 color = tex2D(TextureSampler, input.TexCoord);
+    // Sample base color and apply vertex lighting
+    float4 color = tex2D(TextureSampler, IN.TexCoord);
+    color.rgb *= IN.Light;
 
-    // Apply the light value to the color
-    color.rgb *= input.Light; // Modulate RGB channels by the light value
+    // --- Compute UV relative to the sprite in the atlas ---
+    // If your atlas is laid out in a uniform grid of N×M tiles,
+    // set TileCount = float2(N, M):
+    static const float2 TileCount = float2(16, 16);
+    float2 localUV = frac(IN.TexCoord * TileCount);
+
+    // --- Centered vignette in that local space ---
+    float2 centered = localUV - 0.5;
+    float  dist = length(centered);
+    // darken smoothly from radius=0.4→0.5
+    float  vig = IN.Light - smoothstep(0.01, 2.5, dist);
+    color.rgb *= vig;
 
     return color;
 }
