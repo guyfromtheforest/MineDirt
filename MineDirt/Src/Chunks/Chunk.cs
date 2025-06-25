@@ -1,11 +1,10 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using MineDirt;
-using MineDirt.Src;
-using MineDirt.Src.Chunks;
 using MineDirt.Src.Noise;
 using System;
 using System.Collections.Generic;
+
+namespace MineDirt.Src.Chunks;
 
 public class Chunk
 {
@@ -15,11 +14,21 @@ public class Chunk
     public Block[] Blocks { get; private set; }
     public ushort BlockCount;
     public VertexBuffer VertexBuffer { get; private set; }
-    public VertexBuffer TransparentVertexBuffer { get; private set; }
     public IndexBuffer IndexBuffer { get; private set; }
-    public IndexBuffer TransparentIndexBuffer { get; private set; }
 
     public bool HasGeneratedTerrain { get; private set; } = false;
+
+    private List<TransparentQuad> _transparentQuads = [];
+
+    public VertexBuffer StaticTransparentVertexBuffer { get; private set; }
+    public IndexBuffer StaticTransparentIndexBuffer { get; private set; }
+
+    private VertexBuffer _dynamicTransparentVertexBuffer;
+    private IndexBuffer _dynamicTransparentIndexBuffer;
+
+    private List<SortableQuadInfo> _quadsToSort = [];
+    private QuantizedVertex[] _sortedVertexArray;
+    private int[] _sortedIndexArray;
 
     public Chunk(Vector3 position)
     {
@@ -40,31 +49,26 @@ public class Chunk
         Vector3 worldBlockPosition;
 
         const float terrainFrequency = 1f;
-        const float sandPatchFrequency = 2f; // Controls the size of sand patches
+        const float sandPatchFrequency = 2f;
 
-        // --- Terrain Parameters ---
         const int dirtLayerDepth = 3;
         int seaLevel = Height / 2;
-        const int beachHeight = 1; // How many blocks above sea level beaches can form
+        const int beachHeight = 1;
 
         for (byte x = 0; x < Width; x++)
         {
             for (byte z = 0; z < Width; z++)
             {
-                // --- PERFORM ALL NOISE CALLS HERE (ONCE PER COLUMN) ---
                 float worldX = Position.X + x;
                 float worldZ = Position.Z + z;
 
-                // 1. Primary Terrain Height
                 float heightNoise = Math.Max(MineDirtGame.Noise.GetNoise(worldX * terrainFrequency, worldZ * terrainFrequency), MineDirtGame.Noise.GetNoise(worldX * terrainFrequency * 1.25f, worldZ * terrainFrequency * 1.25f));
                 int maxHeight = (int)(Utils.ScaleNoise(heightNoise, 0.25f, 0.75f) * Height);
                 maxHeight = MathHelper.Clamp(maxHeight, 1, Height - 1);
 
-                // 2. Sand Patches
                 float sandNoise = MineDirtGame.Noise.GetNoise(worldX * sandPatchFrequency, worldZ * sandPatchFrequency);
                 bool createSandPatch = sandNoise > 0.25f;
 
-                // --- GENERATE THE BLOCK COLUMN ---
                 for (byte y = 0; y < Height; y++)
                 {
                     blockPosition = new Vector3(x, y, z);
@@ -75,7 +79,6 @@ public class Chunk
 
                     if (worldBlockPosition.Y > maxHeight)
                     {
-                        // Position is ABOVE ground level, fill with Air or Water
                         if (worldBlockPosition.Y <= seaLevel)
                         {
                             block = new Block(BlockType.Water);
@@ -88,10 +91,8 @@ public class Chunk
                     }
                     else
                     {
-                        // Position is AT or BELOW ground level, fill with solid blocks
-                        BlockCount++; // We know it's a solid block, so increment count here
+                        BlockCount++;
 
-                        // Check if the terrain is low enough to be a beach or seabed
                         bool isBeachZone = maxHeight <= seaLevel + beachHeight;
 
                         if (worldBlockPosition.Y == 0)
@@ -100,24 +101,18 @@ public class Chunk
                         }
                         else if (createSandPatch && isBeachZone && worldBlockPosition.Y > maxHeight - dirtLayerDepth)
                         {
-                            // If we are in a designated sand patch area (near sea level),
-                            // replace the entire topsoil layer with sand.
                             block = new Block(BlockType.Sand);
                         }
                         else if (worldBlockPosition.Y == maxHeight)
                         {
-                            // This is the surface block.
-                            // If it's not a sand beach, it's grass (above water) or dirt (underwater).
                             block = new Block(worldBlockPosition.Y >= seaLevel ? BlockType.Grass : BlockType.Dirt);
                         }
                         else if (worldBlockPosition.Y > maxHeight - dirtLayerDepth)
                         {
-                            // The standard dirt layer just below the surface.
                             block = new Block(BlockType.Dirt);
                         }
                         else
                         {
-                            // Deep underground stone layer, with variation.
                             block = new Block(BlockType.Stone);
                         }
                     }
@@ -135,72 +130,59 @@ public class Chunk
         if (BlockCount <= 0)
             return default;
 
-        // Create vertex and index lists
         List<QuantizedVertex> allVertices = [];
         List<int> allIndices = [];
-
         int vertexOffset = 0;
-        int indexOffset = 0;
 
-        // Create transparent vertex and index lists
+        List<TransparentQuad> newTransparentQuads = [];
         List<QuantizedVertex> allTransparentVertices = [];
         List<int> allTransparentIndices = [];
 
         int transparentVertexOffset = 0;
-        int transparentIndexOffset = 0;
 
         Vector3 blockPos = new();
         for (ushort k = 0; k < Blocks.Length; k++)
         {
             Block block = Blocks[k];
-            if (block.Type == BlockType.Air)
-                continue;
+            if (block.Type == BlockType.Air) continue;
 
-            // TODO: optimize in the shader
             blockPos.X = GetXFromIndex(k);
             blockPos.Y = GetYFromIndex(k);
             blockPos.Z = GetZFromIndex(k);
 
             for (byte faceIndex = 0; faceIndex < 6; faceIndex++)
             {
-                if (!IsFaceVisible(k, Block.Faces[faceIndex]))
-                    continue;
+                if (!IsFaceVisible(k, Block.Faces[faceIndex])) continue;
 
-                // Add the vertices and indices for this face
                 QuantizedVertex[] faceVertices = BlockRendering.GetFaceVertices(
-                    block.Type,
-                    faceIndex,
-                    blockPos + Position
+                    block.Type, faceIndex, blockPos + Position
                 );
 
                 if (block.IsOpaque)
                 {
-                    for (int i = 0; i < faceVertices.Length; i++)
-                        allVertices.Add(faceVertices[i]);
-
+                    allVertices.AddRange(faceVertices);
                     for (byte i = 0; i < BlockRendering.Indices.Length; i++)
                         allIndices.Add(BlockRendering.Indices[i] + vertexOffset);
-
                     vertexOffset += faceVertices.Length;
-                    indexOffset += BlockRendering.Indices.Length;
                 }
                 else
                 {
-                    for (int i = 0; i < faceVertices.Length; i++)
-                        allTransparentVertices.Add(faceVertices[i]);
+                    var quad = new TransparentQuad
+                    {
+                        V0 = faceVertices[0],
+                        V1 = faceVertices[1],
+                        V2 = faceVertices[2],
+                        V3 = faceVertices[3],
+                        Center = (faceVertices[0].Position + faceVertices[1].Position + faceVertices[2].Position + faceVertices[3].Position) / 4f
+                    };
+                    newTransparentQuads.Add(quad);
 
+                    allTransparentVertices.AddRange(faceVertices);
                     for (byte i = 0; i < BlockRendering.Indices.Length; i++)
                         allTransparentIndices.Add(BlockRendering.Indices[i] + transparentVertexOffset);
-
                     transparentVertexOffset += faceVertices.Length;
-                    transparentIndexOffset += BlockRendering.Indices.Length;
                 }
-                // Update the block's bitmask
-                Blocks[k].SetAdjacentFaceVisibility(Block.AdjentFaceMask.Front, true);
             }
-
-            // Update the block's bitmask
-            Blocks[k].SetIsBitmaskBuilt(true);
         }
 
         return new ChunkMeshData()
@@ -209,6 +191,7 @@ public class Chunk
             Vertices = allVertices,
             TransparentIndices = allTransparentIndices,
             TransparentVertices = allTransparentVertices,
+            TransparentQuads = newTransparentQuads
         };
     }
 
@@ -240,30 +223,26 @@ public class Chunk
             IndexBuffer = null;
         }
 
-        if (meshData.TransparentIndices.Count > 0)
+        if (meshData.TransparentVertices != null && meshData.TransparentVertices.Count > 0)
         {
-            TransparentVertexBuffer = new VertexBuffer(
-                MineDirtGame.Graphics.GraphicsDevice,
-                typeof(QuantizedVertex),
-                meshData.TransparentVertices.Count,
-                BufferUsage.None
+            StaticTransparentVertexBuffer = new VertexBuffer(
+                MineDirtGame.Graphics.GraphicsDevice, typeof(QuantizedVertex),
+                meshData.TransparentVertices.Count, BufferUsage.WriteOnly
             );
+            StaticTransparentVertexBuffer.SetData(meshData.TransparentVertices.ToArray());
 
-            TransparentVertexBuffer.SetData([.. meshData.TransparentVertices]);
-
-            TransparentIndexBuffer = new IndexBuffer(
-                MineDirtGame.Graphics.GraphicsDevice,
-                IndexElementSize.ThirtyTwoBits,
-                meshData.TransparentIndices.Count,
-                BufferUsage.None
+            StaticTransparentIndexBuffer = new IndexBuffer(
+                MineDirtGame.Graphics.GraphicsDevice, IndexElementSize.ThirtyTwoBits,
+                meshData.TransparentIndices.Count, BufferUsage.WriteOnly
             );
+            StaticTransparentIndexBuffer.SetData(meshData.TransparentIndices.ToArray());
 
-            TransparentIndexBuffer.SetData([.. meshData.TransparentIndices]);
+            _transparentQuads = meshData.TransparentQuads;
         }
         else
         {
-            TransparentVertexBuffer = null;
-            TransparentIndexBuffer = null;
+            StaticTransparentVertexBuffer = null;
+            StaticTransparentIndexBuffer = null;
         }
     }
 
@@ -326,20 +305,17 @@ public class Chunk
         return subchunkPos.Count > 0;
     }
 
-    // TODO: block ordering for transparency 
     public void DrawOpaque(Effect effect)
     {
         if (BlockCount <= 0 || VertexBuffer == null || IndexBuffer == null)
             return;
 
-        // Set the chunk's vertex buffer and index buffer
         MineDirtGame.Graphics.GraphicsDevice.SetVertexBuffer(VertexBuffer);
         MineDirtGame.Graphics.GraphicsDevice.Indices = IndexBuffer;
 
-        // Apply the custom shader
         foreach (EffectPass pass in effect.CurrentTechnique.Passes)
         {
-            pass.Apply(); // Apply the pass to set up the shader
+            pass.Apply();
             MineDirtGame.Graphics.GraphicsDevice.DrawIndexedPrimitives(
                 PrimitiveType.TriangleList,
                 0,
@@ -349,150 +325,101 @@ public class Chunk
         }
     }
 
-    struct SortableQuad
-    {
-        public QuantizedVertex V0, V1, V2, V3;
-        public float DistanceSquared;
-    }
-
     public void DrawTransparent(Effect effect)
     {
-        // TODO: only do this for chunks that the player is near 
-
-        // If we have no transparent geometry, do nothing.
-        if (TransparentVertexBuffer == null || TransparentIndexBuffer == null || TransparentIndexBuffer.IndexCount == 0)
+        if (_transparentQuads.Count == 0)
             return;
-
-        var cameraPosition = MineDirtGame.Camera.Position;
-
-        var cameraPos2D = new Vector2(MineDirtGame.Camera.Position.X, MineDirtGame.Camera.Position.Z);
-        var chunkPos2D = new Vector2(this.Position.X, this.Position.Z);
-
-        // Perform a 2D distance check, ignoring the Y axis.
-        // Vector2.DistanceSquared is much faster than doing it manually with sqrt.
-        float distanceSquared2D = Vector2.DistanceSquared(cameraPos2D, chunkPos2D);
-
-        if (distanceSquared2D > 2024f)
-        {
-            // Set the chunk's vertex buffer and index buffer
-            MineDirtGame.Graphics.GraphicsDevice.SetVertexBuffer(TransparentVertexBuffer);
-            MineDirtGame.Graphics.GraphicsDevice.Indices = TransparentIndexBuffer;
-
-            // Apply the custom shader
-            foreach (EffectPass pass in effect.CurrentTechnique.Passes)
-            {
-                pass.Apply(); // Apply the pass to set up the shader
-                MineDirtGame.Graphics.GraphicsDevice.DrawIndexedPrimitives(
-                    PrimitiveType.TriangleList,
-                    0,
-                    0,
-                    TransparentIndexBuffer.IndexCount / 3
-                );
-            }
-
-            return; 
-        }
 
         var graphicsDevice = MineDirtGame.Graphics.GraphicsDevice;
 
-        // ====================================================================
-        // STEP 1: READ GEOMETRY DATA FROM THE GPU BACK TO THE CPU (VERY SLOW!)
-        // ====================================================================
+        var cameraPos2D = new Vector2(MineDirtGame.Camera.Position.X, MineDirtGame.Camera.Position.Z);
+        var chunkPos2D = new Vector2(this.Position.X, this.Position.Z);
+        float distanceSquared2D = Vector2.DistanceSquared(cameraPos2D, chunkPos2D);
 
-        // Create CPU-side arrays to hold the data from the buffers.
-        var vertices = new QuantizedVertex[TransparentVertexBuffer.VertexCount];
-        var indices = new int[TransparentIndexBuffer.IndexCount];
+        const float SORTING_DISTANCE_SQUARED = 32f * 32f;
 
-        // Copy the data from the GPU buffers into our new arrays.
-        TransparentVertexBuffer.GetData(vertices);
-        TransparentIndexBuffer.GetData(indices);
-
-        // ====================================================================
-        // STEP 2: RECONSTRUCT QUADS AND CALCULATE DISTANCE FOR SORTING
-        // ====================================================================
-
-        // This helper struct will hold a quad's data and its distance to the camera.
-        // It's defined locally here for simplicity.
-
-        var quadsToSort = new List<SortableQuad>();
-
-        // A quad is made of 2 triangles, which is 6 indices.
-        // We iterate through the index buffer, processing one quad at a time.
-        for (int i = 0; i < indices.Length; i += 6)
+        if (distanceSquared2D > SORTING_DISTANCE_SQUARED)
         {
-            // Get the 4 vertices that make up this quad from the vertex array.
-            // A standard quad is indexed as (0,1,2) and (0,2,3).
-            // The indices array tells us where these vertices are in the vertices array.
-            QuantizedVertex v0 = vertices[indices[i + 0]];
-            QuantizedVertex v1 = vertices[indices[i + 1]];
-            QuantizedVertex v2 = vertices[indices[i + 2]];
-            QuantizedVertex v3 = vertices[indices[i + 5]]; // The 4th unique vertex
+            if (StaticTransparentVertexBuffer == null) return;
 
-            // Calculate the center of the quad to measure distance.
-            // NOTE: You need a way to get a Vector3 from your QuantizedVertex.
-            // I will assume a helper function `GetWorldPosition()` for this example.
-            // You MUST implement this function in your QuantizedVertex struct.
-            Vector3 quadCenter = (v0.Position + v1.Position + v2.Position + v3.Position) / 4f;
+            graphicsDevice.SetVertexBuffer(StaticTransparentVertexBuffer);
+            graphicsDevice.Indices = StaticTransparentIndexBuffer;
+            foreach (EffectPass pass in effect.CurrentTechnique.Passes)
+            {
+                pass.Apply();
+                graphicsDevice.DrawIndexedPrimitives(
+                    PrimitiveType.TriangleList, 0, 0,
+                    StaticTransparentIndexBuffer.IndexCount / 3
+                );
+            }
 
-            // Calculate squared distance (faster than regular distance).
-            float distSq = Vector3.DistanceSquared(cameraPosition, quadCenter);
-
-            quadsToSort.Add(new SortableQuad { V0 = v0, V1 = v1, V2 = v2, V3 = v3, DistanceSquared = distSq });
+            return;
         }
 
-        // ====================================================================
-        // STEP 3: SORT THE QUADS FROM BACK TO FRONT
-        // ====================================================================
-
-        quadsToSort.Sort((a, b) => b.DistanceSquared.CompareTo(a.DistanceSquared));
-
-        // ====================================================================
-        // STEP 4: REBUILD VERTEX/INDEX ARRAYS AND DRAW
-        // ====================================================================
-
-        if (quadsToSort.Count == 0)
-            return;
-
-        // Create new arrays to hold the final, sorted geometry.
-        var sortedVertices = new QuantizedVertex[quadsToSort.Count * 4];
-        var sortedIndices = new int[quadsToSort.Count * 6];
-
-        // Fill the arrays with the sorted quad data.
-        for (int i = 0; i < quadsToSort.Count; i++)
+        _quadsToSort.Clear();
+        var cameraPosition = MineDirtGame.Camera.Position;
+        for (int i = 0; i < _transparentQuads.Count; i++)
         {
-            var quad = quadsToSort[i];
+            _quadsToSort.Add(new SortableQuadInfo
+            {
+                QuadIndex = i,
+                DistanceSquared = Vector3.DistanceSquared(cameraPosition, _transparentQuads[i].Center)
+            });
+        }
+
+        _quadsToSort.Sort((a, b) => b.DistanceSquared.CompareTo(a.DistanceSquared));
+
+        int quadCount = _quadsToSort.Count;
+        int vertexCount = quadCount * 4;
+        int indexCount = quadCount * 6;
+
+        if (_sortedVertexArray == null || _sortedVertexArray.Length < vertexCount)
+            _sortedVertexArray = new QuantizedVertex[vertexCount];
+        if (_sortedIndexArray == null || _sortedIndexArray.Length < indexCount)
+            _sortedIndexArray = new int[indexCount];
+
+        for (int i = 0; i < quadCount; i++)
+        {
+            var quad = _transparentQuads[_quadsToSort[i].QuadIndex];
             int vertexOffset = i * 4;
             int indexOffset = i * 6;
 
-            // Add the 4 vertices
-            sortedVertices[vertexOffset + 0] = quad.V0;
-            sortedVertices[vertexOffset + 1] = quad.V1;
-            sortedVertices[vertexOffset + 2] = quad.V2;
-            sortedVertices[vertexOffset + 3] = quad.V3;
+            _sortedVertexArray[vertexOffset + 0] = quad.V0;
+            _sortedVertexArray[vertexOffset + 1] = quad.V1;
+            _sortedVertexArray[vertexOffset + 2] = quad.V2;
+            _sortedVertexArray[vertexOffset + 3] = quad.V3;
 
-            // Add the 6 indices for the two triangles
-            sortedIndices[indexOffset + 0] = vertexOffset + 0;
-            sortedIndices[indexOffset + 1] = vertexOffset + 1;
-            sortedIndices[indexOffset + 2] = vertexOffset + 2;
-            sortedIndices[indexOffset + 3] = vertexOffset + 0;
-            sortedIndices[indexOffset + 4] = vertexOffset + 2;
-            sortedIndices[indexOffset + 5] = vertexOffset + 3;
+            _sortedIndexArray[indexOffset + 0] = vertexOffset + 0;
+            _sortedIndexArray[indexOffset + 1] = vertexOffset + 2;
+            _sortedIndexArray[indexOffset + 2] = vertexOffset + 1;
+            _sortedIndexArray[indexOffset + 3] = vertexOffset + 1;
+            _sortedIndexArray[indexOffset + 4] = vertexOffset + 2;
+            _sortedIndexArray[indexOffset + 5] = vertexOffset + 3;
         }
 
-        // Apply the shader effect
+        if (_dynamicTransparentVertexBuffer == null || _dynamicTransparentVertexBuffer.VertexCount < vertexCount)
+        {
+            _dynamicTransparentVertexBuffer?.Dispose();
+            _dynamicTransparentVertexBuffer = new VertexBuffer(graphicsDevice, typeof(QuantizedVertex), vertexCount, BufferUsage.WriteOnly);
+        }
+        if (_dynamicTransparentIndexBuffer == null || _dynamicTransparentIndexBuffer.IndexCount < indexCount)
+        {
+            _dynamicTransparentIndexBuffer?.Dispose();
+            _dynamicTransparentIndexBuffer = new IndexBuffer(graphicsDevice, IndexElementSize.ThirtyTwoBits, indexCount, BufferUsage.WriteOnly);
+        }
+
+        _dynamicTransparentVertexBuffer.SetData(_sortedVertexArray, 0, vertexCount);
+        _dynamicTransparentIndexBuffer.SetData(_sortedIndexArray, 0, indexCount);
+
+        graphicsDevice.SetVertexBuffer(_dynamicTransparentVertexBuffer);
+        graphicsDevice.Indices = _dynamicTransparentIndexBuffer;
+
         foreach (EffectPass pass in effect.CurrentTechnique.Passes)
         {
             pass.Apply();
-
-            // Draw the geometry directly from the CPU arrays.
-            graphicsDevice.DrawUserIndexedPrimitives(
-                PrimitiveType.TriangleList,
-                sortedVertices,      // The vertex data
-                0,                   // The starting vertex
-                sortedVertices.Length, // The number of vertices
-                sortedIndices,       // The index data
-                0,                   // The starting index
-                sortedIndices.Length / 3 // The number of triangles
+            graphicsDevice.DrawIndexedPrimitives(
+                PrimitiveType.TriangleList, 0, 0,
+                indexCount / 3
             );
         }
     }

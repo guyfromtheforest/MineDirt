@@ -1,4 +1,6 @@
-﻿namespace MineDirt.Src;
+﻿using MineDirt.Src.Chunks;
+
+namespace MineDirt.Src;
 public enum BlockType : byte
 {
     Air,

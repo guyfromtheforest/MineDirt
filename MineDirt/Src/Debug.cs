@@ -2,6 +2,7 @@
 using ImGuiNET;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using MineDirt.Src.Chunks;
 using MonoGame.ImGuiNet;
 using System;
 using System.Diagnostics;
