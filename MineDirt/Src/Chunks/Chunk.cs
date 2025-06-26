@@ -25,10 +25,14 @@ public class Chunk
 
     private VertexBuffer _dynamicTransparentVertexBuffer;
     private IndexBuffer _dynamicTransparentIndexBuffer;
+    private int _lastValidDynamicIndexCount = 0;
 
     private List<SortableQuadInfo> _quadsToSort = [];
     private QuantizedVertex[] _sortedVertexArray;
     private int[] _sortedIndexArray;
+
+    private Vector3 _lastSortCameraPosition = Vector3.Zero;
+    private bool _needsResort = false;
 
     public Chunk(Vector3 position)
     {
@@ -238,12 +242,14 @@ public class Chunk
             StaticTransparentIndexBuffer.SetData(meshData.TransparentIndices.ToArray());
 
             _transparentQuads = meshData.TransparentQuads;
+            _needsResort = true;
         }
         else
         {
             StaticTransparentVertexBuffer = null;
             StaticTransparentIndexBuffer = null;
             _transparentQuads.Clear();
+            _needsResort = true;
         }
     }
 
@@ -357,60 +363,69 @@ public class Chunk
             return;
         }
 
-        _quadsToSort.Clear();
         var cameraPosition = MineDirtGame.Camera.Position;
-        for (int i = 0; i < _transparentQuads.Count; i++)
+        var cameraDistanceSquared = Vector3.DistanceSquared(cameraPosition, _lastSortCameraPosition);
+
+        if (_needsResort || cameraDistanceSquared > (2.0f * 2.0f))
         {
-            _quadsToSort.Add(new SortableQuadInfo
+            _needsResort = false;
+            _lastSortCameraPosition = cameraPosition;
+
+            _quadsToSort.Clear();
+            for (int i = 0; i < _transparentQuads.Count; i++)
             {
-                QuadIndex = i,
-                DistanceSquared = Vector3.DistanceSquared(cameraPosition, _transparentQuads[i].Center)
-            });
+                _quadsToSort.Add(new SortableQuadInfo
+                {
+                    QuadIndex = i,
+                    DistanceSquared = Vector3.DistanceSquared(cameraPosition, _transparentQuads[i].Center)
+                });
+            }
+
+            _quadsToSort.Sort((a, b) => b.DistanceSquared.CompareTo(a.DistanceSquared));
+
+            int quadCount = _quadsToSort.Count;
+            int vertexCount = quadCount * 4;
+            int indexCount = quadCount * 6;
+
+            if (_sortedVertexArray == null || _sortedVertexArray.Length < vertexCount)
+                _sortedVertexArray = new QuantizedVertex[vertexCount];
+            if (_sortedIndexArray == null || _sortedIndexArray.Length < indexCount)
+                _sortedIndexArray = new int[indexCount];
+
+            for (int i = 0; i < quadCount; i++)
+            {
+                var quad = _transparentQuads[_quadsToSort[i].QuadIndex];
+                int vertexOffset = i * 4;
+                int indexOffset = i * 6;
+
+                _sortedVertexArray[vertexOffset + 0] = quad.V0;
+                _sortedVertexArray[vertexOffset + 1] = quad.V1;
+                _sortedVertexArray[vertexOffset + 2] = quad.V2;
+                _sortedVertexArray[vertexOffset + 3] = quad.V3;
+
+                _sortedIndexArray[indexOffset + 0] = vertexOffset + 0;
+                _sortedIndexArray[indexOffset + 1] = vertexOffset + 2;
+                _sortedIndexArray[indexOffset + 2] = vertexOffset + 1;
+                _sortedIndexArray[indexOffset + 3] = vertexOffset + 1;
+                _sortedIndexArray[indexOffset + 4] = vertexOffset + 2;
+                _sortedIndexArray[indexOffset + 5] = vertexOffset + 3;
+            }
+
+            if (_dynamicTransparentVertexBuffer == null || _dynamicTransparentVertexBuffer.VertexCount < vertexCount)
+            {
+                _dynamicTransparentVertexBuffer?.Dispose();
+                _dynamicTransparentVertexBuffer = new VertexBuffer(graphicsDevice, typeof(QuantizedVertex), vertexCount, BufferUsage.WriteOnly);
+            }
+            if (_dynamicTransparentIndexBuffer == null || _dynamicTransparentIndexBuffer.IndexCount < indexCount)
+            {
+                _dynamicTransparentIndexBuffer?.Dispose();
+                _dynamicTransparentIndexBuffer = new IndexBuffer(graphicsDevice, IndexElementSize.ThirtyTwoBits, indexCount, BufferUsage.WriteOnly);
+            }
+
+            _dynamicTransparentVertexBuffer.SetData(_sortedVertexArray, 0, vertexCount);
+            _dynamicTransparentIndexBuffer.SetData(_sortedIndexArray, 0, indexCount);
+            _lastValidDynamicIndexCount = indexCount;
         }
-
-        _quadsToSort.Sort((a, b) => b.DistanceSquared.CompareTo(a.DistanceSquared));
-
-        int quadCount = _quadsToSort.Count;
-        int vertexCount = quadCount * 4;
-        int indexCount = quadCount * 6;
-
-        if (_sortedVertexArray == null || _sortedVertexArray.Length < vertexCount)
-            _sortedVertexArray = new QuantizedVertex[vertexCount];
-        if (_sortedIndexArray == null || _sortedIndexArray.Length < indexCount)
-            _sortedIndexArray = new int[indexCount];
-
-        for (int i = 0; i < quadCount; i++)
-        {
-            var quad = _transparentQuads[_quadsToSort[i].QuadIndex];
-            int vertexOffset = i * 4;
-            int indexOffset = i * 6;
-
-            _sortedVertexArray[vertexOffset + 0] = quad.V0;
-            _sortedVertexArray[vertexOffset + 1] = quad.V1;
-            _sortedVertexArray[vertexOffset + 2] = quad.V2;
-            _sortedVertexArray[vertexOffset + 3] = quad.V3;
-
-            _sortedIndexArray[indexOffset + 0] = vertexOffset + 0;
-            _sortedIndexArray[indexOffset + 1] = vertexOffset + 2;
-            _sortedIndexArray[indexOffset + 2] = vertexOffset + 1;
-            _sortedIndexArray[indexOffset + 3] = vertexOffset + 1;
-            _sortedIndexArray[indexOffset + 4] = vertexOffset + 2;
-            _sortedIndexArray[indexOffset + 5] = vertexOffset + 3;
-        }
-
-        if (_dynamicTransparentVertexBuffer == null || _dynamicTransparentVertexBuffer.VertexCount < vertexCount)
-        {
-            _dynamicTransparentVertexBuffer?.Dispose();
-            _dynamicTransparentVertexBuffer = new VertexBuffer(graphicsDevice, typeof(QuantizedVertex), vertexCount, BufferUsage.WriteOnly);
-        }
-        if (_dynamicTransparentIndexBuffer == null || _dynamicTransparentIndexBuffer.IndexCount < indexCount)
-        {
-            _dynamicTransparentIndexBuffer?.Dispose();
-            _dynamicTransparentIndexBuffer = new IndexBuffer(graphicsDevice, IndexElementSize.ThirtyTwoBits, indexCount, BufferUsage.WriteOnly);
-        }
-
-        _dynamicTransparentVertexBuffer.SetData(_sortedVertexArray, 0, vertexCount);
-        _dynamicTransparentIndexBuffer.SetData(_sortedIndexArray, 0, indexCount);
 
         graphicsDevice.SetVertexBuffer(_dynamicTransparentVertexBuffer);
         graphicsDevice.Indices = _dynamicTransparentIndexBuffer;
@@ -420,7 +435,7 @@ public class Chunk
             pass.Apply();
             graphicsDevice.DrawIndexedPrimitives(
                 PrimitiveType.TriangleList, 0, 0,
-                indexCount / 3
+                _lastValidDynamicIndexCount / 3
             );
         }
     }
