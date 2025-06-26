@@ -243,6 +243,7 @@ public class Chunk
         {
             StaticTransparentVertexBuffer = null;
             StaticTransparentIndexBuffer = null;
+            _transparentQuads.Clear();
         }
     }
 
