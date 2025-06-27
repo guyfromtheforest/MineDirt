@@ -35,7 +35,7 @@ namespace MineDirt.Src
             for (int i = 0; i < 4; i++)
             {
                 Vector3 finalPos = blockLocalPos; 
-                float light = GetLightForFace(faceIndex);
+                int light = GetLightForFace(faceIndex);
                 vertices[i] = new QuantizedVertex(finalPos, texCoords[i], light, corners[i]);
             }
 
@@ -43,18 +43,18 @@ namespace MineDirt.Src
         }
 
         // Helper to get lighting
-        private static float GetLightForFace(byte faceIndex)
+        private static int GetLightForFace(byte faceIndex)
         {
             // Simple lighting based on face direction
             return faceIndex switch
             {
-                4 => 1.0f,  // Top
-                0 => 0.9f,  // Front
-                1 => 0.9f,  // Back
-                2 => 0.8f,  // Left
-                3 => 0.8f,  // Right
-                5 => 0.7f,  // Bottom
-                _ => 1.0f
+                4 => 15,  // Top
+                0 => 13,  // Front
+                1 => 13,  // Back
+                2 => 11,  // Left
+                3 => 11,  // Right
+                5 => 8,  // Bottom
+                _ => 1
             };
         }
 
