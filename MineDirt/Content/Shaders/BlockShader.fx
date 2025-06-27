@@ -22,18 +22,6 @@ struct VertexOutput
     float Light : COLOR0; // Light value
 };
 
-static const float3 CornerOffsets[8] =
-{
-    float3(0,1,0), // 0: Top-Left-Front
-    float3(1,1,0), // 1: Top-Right-Front
-    float3(0,0,0), // 2: Bottom-Left-Front
-    float3(1,0,0), // 3: Bottom-Right-Front
-    float3(0,1,1), // 4: Top-Left-Back
-    float3(1,1,1), // 5: Top-Right-Back
-    float3(0,0,1), // 6: Bottom-Left-Back
-    float3(1,0,1)  // 7: Bottom-Right-Back
-};
-
 float3 UnpackAndOffset(float packedData)
 {
     // 1) Recover exact integer
