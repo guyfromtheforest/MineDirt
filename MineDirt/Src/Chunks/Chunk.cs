@@ -159,7 +159,7 @@ public class Chunk
                 if (!IsFaceVisible(k, Block.Faces[faceIndex])) continue;
 
                 QuantizedVertex[] faceVertices = BlockRendering.GetFaceVertices(
-                    block.Type, faceIndex, blockPos + Position
+                    block.Type, faceIndex, blockPos
                 );
 
                 if (block.IsOpaque)
@@ -171,13 +171,15 @@ public class Chunk
                 }
                 else
                 {
+                    Vector3 worldCenterOfBlock = (blockPos + new Vector3(0.5f)) + this.Position;
+
                     var quad = new TransparentQuad
                     {
                         V0 = faceVertices[0],
                         V1 = faceVertices[1],
                         V2 = faceVertices[2],
                         V3 = faceVertices[3],
-                        Center = (faceVertices[0].Position + faceVertices[1].Position + faceVertices[2].Position + faceVertices[3].Position) / 4f
+                        Center = worldCenterOfBlock
                     };
                     newTransparentQuads.Add(quad);
 
@@ -317,6 +319,8 @@ public class Chunk
         if (BlockCount <= 0 || VertexBuffer == null || IndexBuffer == null)
             return;
 
+        effect.Parameters["ChunkWorldPosition"].SetValue(this.Position);
+
         MineDirtGame.Graphics.GraphicsDevice.SetVertexBuffer(VertexBuffer);
         MineDirtGame.Graphics.GraphicsDevice.Indices = IndexBuffer;
 
@@ -336,6 +340,8 @@ public class Chunk
     {
         if (_transparentQuads.Count == 0)
             return;
+
+        effect.Parameters["ChunkWorldPosition"].SetValue(this.Position);
 
         var graphicsDevice = MineDirtGame.Graphics.GraphicsDevice;
 

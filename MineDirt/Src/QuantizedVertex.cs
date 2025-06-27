@@ -1,25 +1,42 @@
-﻿using Microsoft.Xna.Framework;
+﻿// In QuantizedVertex.cs
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Graphics.PackedVector;
 using System;
 
 namespace MineDirt.Src;
+
 public struct QuantizedVertex : IVertexType
 {
-    public Vector3 Position; 
-    public Vector2 UV; 
+    public Vector2 UV;
     public float Light;
 
-    public QuantizedVertex(Vector3 position, Vector2 uv, float light)
+    public float PackedPosition;
+
+    public QuantizedVertex(Vector3 blockPos, Vector2 uv, float light, int cornerID)
     {
-        this.Position = position;
-        this.UV = uv;
-        this.Light = light;
+        UV = uv;
+        Light = light;
+
+        int bx = (int)blockPos.X & 0xF;    // 4 bits: 0–15
+        int bz = (int)blockPos.Z & 0xF;    // 4 bits: 0–15
+        int by = (int)blockPos.Y & 0xFF;   // 8 bits: 0–255
+        cornerID = cornerID & 0x7;         // 3 bits: 0–7
+
+        int packed =
+              bx
+            | (bz << 4)
+            | (cornerID << 8)
+            | (by << 11)
+            ;
+
+        PackedPosition = (float)packed;
     }
 
     public static readonly VertexDeclaration VertexDeclaration = new(
-        new VertexElement(0, VertexElementFormat.Vector3, VertexElementUsage.Position, 0),
-        new VertexElement(12, VertexElementFormat.Vector2, VertexElementUsage.TextureCoordinate, 0),
-        new VertexElement(20, VertexElementFormat.Single, VertexElementUsage.Color, 0)
+        new VertexElement(0, VertexElementFormat.Vector2, VertexElementUsage.TextureCoordinate, 0),
+        new VertexElement(8, VertexElementFormat.Single, VertexElementUsage.Color, 0),
+        new VertexElement(12, VertexElementFormat.Single, VertexElementUsage.TextureCoordinate, 1) // Use COLOR1 semantic
     );
 
     VertexDeclaration IVertexType.VertexDeclaration => VertexDeclaration;

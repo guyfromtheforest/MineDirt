@@ -7,62 +7,36 @@ namespace MineDirt.Src
     {
         public static readonly byte[] Indices = [0, 2, 3, 0, 3, 1];
 
-        // This lookup table stores the 8 corner positions of a unit cube.
-        private static readonly Vector3[] CornerOffsets =
-        [
-            new(0f, 1f, 0f), // 0: Top-Left-Front
-            new(1f, 1f, 0f), // 1: Top-Right-Front
-            new(0f, 0f, 0f), // 2: Bottom-Left-Front
-            new(1f, 0f, 0f), // 3: Bottom-Right-Front
-            new(0f, 1f, 1f), // 4: Top-Left-Back
-            new(1f, 1f, 1f), // 5: Top-Right-Back
-            new(0f, 0f, 1f), // 6: Bottom-Left-Back
-            new(1f, 0f, 1f)  // 7: Bottom-Right-Back
-        ];
-
-        // This table defines which 4 corners make up each of the 6 faces.
-        // The order is important for correct triangle winding (culling).
-        // Front/Back/Left/Right are wound counter-clockwise when viewed from outside.
         private static readonly int[][] FaceCorners =
         [
-            [ 0, 1, 2, 3 ], // Face 0: Front (+Z in standard right-hand coords, but let's stick to your names)
-            [ 5, 4, 7, 6 ], // Face 1: Back
-            [ 4, 0, 6, 2 ], // Face 2: Left
-            [ 1, 5, 3, 7 ], // Face 3: Right
-            [ 4, 5, 0, 1 ], // Face 4: Top
-            [ 2, 3, 6, 7 ]  // Face 5: Bottom
+            [2,3,0,1],
+            [7,6,5,4],
+            [6,2,4,0],
+            [3,7,1,5],
+            [6,7,2,3],
+            [0,1,4,5],
         ];
 
-        // Let's store texture coordinates in a cleaner way.
         private static Dictionary<BlockType, Vector2[][]> _textures = new();
 
-        public static QuantizedVertex[] GetFaceVertices(BlockType blockType, byte faceIndex, Vector3 blockWorldPos)
+        public static QuantizedVertex[] GetFaceVertices(BlockType blockType, byte faceIndex, Vector3 blockLocalPos)
         {
             var vertices = new QuantizedVertex[4];
-
-            // Get the indices of the 4 corners for the requested face
             int[] corners = FaceCorners[faceIndex];
-
-            // Get the correct texture coordinates for this face
             Vector2[] texCoords = GetFaceTexture(blockType, faceIndex);
 
-            // Adjust Y-position for water blocks
-            if (blockType == BlockType.Water)
-            {
-                blockWorldPos.Y -= 0.1f;
-            }
+            //// Adjust Y-position for water blocks
+            //if (blockType == BlockType.Water)
+            //{
+            //    blockLocalPos.Y -= 0.1f;
+            //}
 
             // Create the 4 vertices
             for (int i = 0; i < 4; i++)
             {
-                // Calculate final vertex position in world space
-                Vector3 finalPos = blockWorldPos + CornerOffsets[corners[i]];
-
-                // Get the lighting value (can be made more complex later)
+                Vector3 finalPos = blockLocalPos; 
                 float light = GetLightForFace(faceIndex);
-
-                // Create the vertex with correct WORLD position
-                vertices[i] = new QuantizedVertex(finalPos, texCoords[i], light);
+                vertices[i] = new QuantizedVertex(finalPos, texCoords[i], light, corners[i]);
             }
 
             return vertices;
