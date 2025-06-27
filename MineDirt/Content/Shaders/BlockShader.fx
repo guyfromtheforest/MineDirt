@@ -39,12 +39,7 @@ float3 UnpackAndOffset(float packedData)
     float p2_8 = floor(p1_16 / 8.0);   // p >> 11
     float cornerF = p1_16 - p2_8 * 8.0;   // (p>>8) % 8
 
-    // 5) p2_8 now contains (light << 8 | Y). We must separate them.
-    //    The range of Y is 0-255 (requires 256 unique values).
-    float p3_256 = floor(p2_8 / 256.0); // This is equivalent to p >> (11 + 8)
-
-    // 6) Extract Y (8 bits) by taking the remainder.
-    float blockY = p2_8 - p3_256 * 256.0; // This is (p >> 11) % 256
+    float blockY = p2_8 % 256.0; // This is (p >> 11) % 256
 
     // 6) Decode cornerF’s three bits into offsets 0 or 1
     float ox = cornerF - floor(cornerF / 2.0) * 2.0;        // bit0 = cornerF % 2
