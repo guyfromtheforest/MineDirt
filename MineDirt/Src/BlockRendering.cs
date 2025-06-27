@@ -24,14 +24,7 @@ namespace MineDirt.Src
             var vertices = new QuantizedVertex[4];
             int[] corners = FaceCorners[faceIndex];
             Vector2[] texCoords = GetFaceTexture(blockType, faceIndex);
-
-            //// Adjust Y-position for water blocks
-            //if (blockType == BlockType.Water)
-            //{
-            //    blockLocalPos.Y -= 0.1f;
-            //}
-
-            // Create the 4 vertices
+            
             for (int i = 0; i < 4; i++)
             {
                 Vector3 finalPos = blockLocalPos; 
@@ -42,7 +35,6 @@ namespace MineDirt.Src
             return vertices;
         }
 
-        // Helper to get lighting
         private static int GetLightForFace(byte faceIndex)
         {
             // Simple lighting based on face direction
@@ -58,7 +50,6 @@ namespace MineDirt.Src
             };
         }
 
-        // Helper to select the right texture for a face
         private static Vector2[] GetFaceTexture(BlockType blockType, byte faceIndex)
         {
             Vector2[][] blockTextures = _textures[blockType];

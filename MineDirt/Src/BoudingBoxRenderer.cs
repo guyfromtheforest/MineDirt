@@ -92,7 +92,6 @@ public static class BoundingBoxRenderer // Or place this method in your existing
 
         graphicsDevice.BlendState = BlendState.Opaque; // Lines are opaque
         graphicsDevice.DepthStencilState = DepthStencilState.Default; // Default depth testing for lines
-        // graphicsDevice.RasterizerState = RasterizerState.CullNone; // Optional: ensure all lines draw
 
         effect.CurrentTechnique.Passes[0].Apply();
         graphicsDevice.DrawUserIndexedPrimitives(
