@@ -22,7 +22,6 @@ public class Debug
     // Retrieve memory usage information
     long workingSet = 0;
     long privateMemory = 0; 
-    long virtualMemory = 0; 
 
     private float fps = 0f;
     private float ups = 0f;
@@ -84,7 +83,6 @@ public class Debug
 
             workingSet = currentProcess.WorkingSet64; // Physical memory usage in bytes
             privateMemory = currentProcess.PrivateMemorySize64; // Private memory in bytes
-            virtualMemory = currentProcess.VirtualMemorySize64; // Virtual memory usage in bytes
         }
     }
 
@@ -138,7 +136,6 @@ public class Debug
             // Display memory usage information in GB
             ImGui.Text($"Working Set: {(double)workingSet / 1024 / 1024 / 1024:0.###} GB");
             ImGui.Text($"Private Memory: {(double)privateMemory / 1024 / 1024 / 1024:0.###} GB");
-            ImGui.Text($"Virtual Memory: {(double)virtualMemory / 1024 / 1024 / 1024:0.###} GB");
 
             // Checkbox 
             ImGui.Checkbox("Render Wireframes", ref RenderWireframes);
