@@ -9,7 +9,7 @@ namespace MineDirt.Src.Chunks;
 public class Chunk
 {
     public static ushort Width { get; private set; } = 16;
-    public static int Height { get; private set; } = 8 * Width; // Max chunk Height
+    public static int Height { get; private set; } = 8 * Width;
     public Vector3 Position { get; private set; }
     public Block[] Blocks { get; private set; }
     public ushort BlockCount;
