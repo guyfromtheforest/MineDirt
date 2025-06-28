@@ -167,16 +167,16 @@ public class MineDirtGame : Game
 
         blockShader.Parameters["WorldViewProjection"].SetValue(Camera.View * Camera.Projection);
 
+        effect.View = Camera.View;
+        effect.Projection = Camera.Projection;
+
         World.DrawChunksOpaque(blockShader);
         GraphicsDevice.BlendState = BlendState.AlphaBlend;
         World.DrawChunksTransparent(blockShader);
 
-        if (Camera.PointedBlock.Type != BlockType.Air)
+        if (Camera.PointedBlock.Type != BlockType.Air && Camera.PointedBlock.Type != BlockType.Water)
         {
-            BoundingBox box = new BoundingBox(
-                Camera.PointedBlockPosition,
-                Camera.PointedBlockPosition + Vector3.One);
-
+            BoundingBox box = new(Camera.PointedBlockPosition, Camera.PointedBlockPosition + Vector3.One);
             BoundingBoxRenderer.DrawHighlightBox(box, GraphicsDevice, effect);
         }
 
@@ -189,7 +189,6 @@ public class MineDirtGame : Game
         _spriteBatch.Begin(effect: underwaterShader);
         _spriteBatch.Draw(_renderTarget, Vector2.Zero, Color.White);
         _spriteBatch.End();
-
 
         _spriteBatch.Begin(); 
         _spriteBatch.Draw(Crosshair, CrosshairPosition, Color.White);
