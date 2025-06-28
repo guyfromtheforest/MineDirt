@@ -9,7 +9,7 @@ namespace MineDirt.Src.Chunks;
 public class Chunk
 {
     public static ushort Width { get; private set; } = 16;
-    public static int Height { get; private set; } = 8 * Width;
+    public static int Height { get; private set; } = 16 * Width;
     public Vector3 Position { get; private set; }
     public Block[] Blocks { get; private set; }
     public ushort BlockCount;
@@ -56,24 +56,24 @@ public class Chunk
         const float sandPatchFrequency = 2f;
 
         const int dirtLayerDepth = 3;
-        int seaLevel = Height / 2;
+        int seaLevel = Height / 4;
         const int beachHeight = 1;
 
-        for (byte x = 0; x < Width; x++)
+        for (int x = 0; x < Width; x++)
         {
-            for (byte z = 0; z < Width; z++)
+            for (int z = 0; z < Width; z++)
             {
                 float worldX = Position.X + x;
                 float worldZ = Position.Z + z;
 
                 float heightNoise = Math.Max(MineDirtGame.Noise.GetNoise(worldX * terrainFrequency, worldZ * terrainFrequency), MineDirtGame.Noise.GetNoise(worldX * terrainFrequency * 1.25f, worldZ * terrainFrequency * 1.25f));
-                int maxHeight = (int)(Utils.ScaleNoise(heightNoise, 0.25f, 0.75f) * Height);
-                maxHeight = MathHelper.Clamp(maxHeight, 1, Height - 1);
+                int maxHeight = (int)(Utils.ScaleNoise(heightNoise, 0.25f, 0.75f) * Height/2);
+                maxHeight = MathHelper.Clamp(maxHeight, 1, Height/2 - 1);
 
                 float sandNoise = MineDirtGame.Noise.GetNoise(worldX * sandPatchFrequency, worldZ * sandPatchFrequency);
                 bool createSandPatch = sandNoise > 0.25f;
 
-                for (byte y = 0; y < Height; y++)
+                for (int y = 0; y < Height; y++)
                 {
                     blockPosition = new Vector3(x, y, z);
                     worldBlockPosition.Y = Position.Y + y;
@@ -145,7 +145,7 @@ public class Chunk
         int transparentVertexOffset = 0;
 
         Vector3 blockPos = new();
-        for (ushort k = 0; k < Blocks.Length; k++)
+        for (int k = 0; k < Blocks.Length; k++)
         {
             Block block = Blocks[k];
             if (block.Type == BlockType.Air) continue;
@@ -255,7 +255,7 @@ public class Chunk
         }
     }
 
-    bool IsFaceVisible(ushort blockIndex, short direction)
+    bool IsFaceVisible(int blockIndex, short direction)
     {
         Block block = Blocks[blockIndex];
         int unwrappedNbIndex = blockIndex + direction;
