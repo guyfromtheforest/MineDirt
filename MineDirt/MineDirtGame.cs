@@ -35,10 +35,6 @@ public class MineDirtGame : Game
 
     private EffectParameter timeParameter;
 
-    // In MineDirtGame.cs, add these fields with your other class members
-    private RasterizerState _rasterizerStateOpaque;
-    private RasterizerState _rasterizerStateTransparent;
-
     public MineDirtGame()
     {
         Graphics = new GraphicsDeviceManager(this);
@@ -135,18 +131,6 @@ public class MineDirtGame : Game
         var pp = GraphicsDevice.PresentationParameters;
         _renderTarget = new RenderTarget2D(GraphicsDevice, pp.BackBufferWidth, pp.BackBufferHeight, false, pp.BackBufferFormat, pp.DepthStencilFormat);
 
-        _rasterizerStateOpaque = new RasterizerState
-        {
-            CullMode = CullMode.CullCounterClockwiseFace, // Default culling
-            FillMode = FillMode.Solid
-        };
-
-        _rasterizerStateTransparent = new RasterizerState
-        {
-            CullMode = CullMode.None, // The key change! Disables culling.
-            FillMode = FillMode.Solid
-        };
-
         debug.LoadContent();
     }
 
@@ -186,10 +170,8 @@ public class MineDirtGame : Game
         effect.View = Camera.View;
         effect.Projection = Camera.Projection;
 
-        GraphicsDevice.RasterizerState = _rasterizerStateOpaque;
         World.DrawChunksOpaque(blockShader);
         GraphicsDevice.BlendState = BlendState.AlphaBlend;
-        GraphicsDevice.RasterizerState = _rasterizerStateTransparent;
         World.DrawChunksTransparent(blockShader);
 
         if (Camera.PointedBlock.Type != BlockType.Air && Camera.PointedBlock.Type != BlockType.Water)

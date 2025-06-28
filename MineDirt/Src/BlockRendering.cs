@@ -7,6 +7,8 @@ namespace MineDirt.Src
     {
         public static readonly byte[] Indices = [0, 2, 3, 0, 3, 1];
 
+        public static readonly byte[] FlippedIndices = [0, 3, 2, 0, 1, 3];
+
         private static readonly int[][] FaceCorners =
         [
             [2,3,0,1], // Front 

@@ -67,8 +67,8 @@ public class Chunk
                 float worldZ = Position.Z + z;
 
                 float heightNoise = Math.Max(MineDirtGame.Noise.GetNoise(worldX * terrainFrequency, worldZ * terrainFrequency), MineDirtGame.Noise.GetNoise(worldX * terrainFrequency * 1.25f, worldZ * terrainFrequency * 1.25f));
-                int maxHeight = (int)(Utils.ScaleNoise(heightNoise, 0.25f, 0.75f) * Height/2);
-                maxHeight = MathHelper.Clamp(maxHeight, 1, Height/2 - 1);
+                int maxHeight = (int)(Utils.ScaleNoise(heightNoise, 0.25f, 0.75f) * Height / 2);
+                maxHeight = MathHelper.Clamp(maxHeight, 1, Height / 2 - 1);
 
                 float sandNoise = MineDirtGame.Noise.GetNoise(worldX * sandPatchFrequency, worldZ * sandPatchFrequency);
                 bool createSandPatch = sandNoise > 0.25f;
@@ -156,7 +156,7 @@ public class Chunk
 
             for (byte faceIndex = 0; faceIndex < 6; faceIndex++)
             {
-                if (!IsFaceVisible(k, Block.Faces[faceIndex])) continue;
+                if (!IsFaceVisible(k, Block.Faces[faceIndex], out Block? neighborBlock)) continue;
 
                 QuantizedVertex[] faceVertices = BlockRendering.GetFaceVertices(
                     block.Type, faceIndex, blockPos
@@ -171,21 +171,32 @@ public class Chunk
                 }
                 else
                 {
-                    Vector3 worldCenterOfBlock = (blockPos + new Vector3(0.5f)) + this.Position;
+                    allTransparentVertices.AddRange(faceVertices);
+                    for (byte i = 0; i < BlockRendering.Indices.Length; i++)
+                        allTransparentIndices.Add(BlockRendering.Indices[i] + transparentVertexOffset);
 
+                    bool isTwoSided = (block.Type == BlockType.Water &&
+                       faceIndex == 4 && // Top face
+                       neighborBlock?.Type == BlockType.Air);
+
+                    if (isTwoSided)
+                    {
+                        for (byte i = 0; i < BlockRendering.FlippedIndices.Length; i++)
+                            allTransparentIndices.Add(BlockRendering.FlippedIndices[i] + transparentVertexOffset);
+                    }
+
+                    Vector3 worldCenterOfBlock = (blockPos + new Vector3(0.5f)) + this.Position;
                     var quad = new TransparentQuad
                     {
                         V0 = faceVertices[0],
                         V1 = faceVertices[1],
                         V2 = faceVertices[2],
                         V3 = faceVertices[3],
-                        Center = worldCenterOfBlock
+                        Center = worldCenterOfBlock, 
+                        IsTwoSided = isTwoSided
                     };
                     newTransparentQuads.Add(quad);
 
-                    allTransparentVertices.AddRange(faceVertices);
-                    for (byte i = 0; i < BlockRendering.Indices.Length; i++)
-                        allTransparentIndices.Add(BlockRendering.Indices[i] + transparentVertexOffset);
                     transparentVertexOffset += faceVertices.Length;
                 }
             }
@@ -255,13 +266,15 @@ public class Chunk
         }
     }
 
-    bool IsFaceVisible(int blockIndex, short direction)
+    bool IsFaceVisible(int blockIndex, short direction, out Block? nbBlock)
     {
         Block block = Blocks[blockIndex];
         int unwrappedNbIndex = blockIndex + direction;
         int unwX = GetXFromIndex(blockIndex) + GetXFromIndex(direction);
         int unwY = GetYFromIndex(blockIndex) + GetYFromIndex(direction);
         int unwZ = GetZFromIndex(blockIndex) + GetZFromIndex(direction);
+
+        nbBlock = null;
 
         if (unwY < 0 || unwY >= Height)
             return true;
@@ -275,14 +288,18 @@ public class Chunk
             );
 
             if (World.TryGetBlock(worldBlockPos, out Block neighborBlock))
+            {
+                nbBlock = neighborBlock;
                 return !(neighborBlock.Type == block.Type || neighborBlock.IsOpaque);
+            }
             else
-                return true; // Neighbor chunk not loaded, face is visible.
+                return true;
         }
 
-        Block nbBlock = Blocks[unwrappedNbIndex];
+        Block nb = Blocks[unwrappedNbIndex];
+        nbBlock = nb;
 
-        return !(nbBlock.Type == block.Type || nbBlock.IsOpaque);
+        return !(nb.Type == block.Type || nb.IsOpaque);
     }
 
     public bool TryGetBlockChunkNeighbours(int index, out List<Vector3> subchunkPos)
@@ -335,7 +352,7 @@ public class Chunk
             );
         }
     }
-
+    
     public void DrawTransparent(Effect effect)
     {
         if (_transparentQuads.Count == 0)
@@ -354,7 +371,6 @@ public class Chunk
         if (distanceSquared2D > SORTING_DISTANCE_SQUARED)
         {
             if (StaticTransparentVertexBuffer == null) return;
-
             graphicsDevice.SetVertexBuffer(StaticTransparentVertexBuffer);
             graphicsDevice.Indices = StaticTransparentIndexBuffer;
             foreach (EffectPass pass in effect.CurrentTechnique.Passes)
@@ -365,7 +381,6 @@ public class Chunk
                     StaticTransparentIndexBuffer.IndexCount / 3
                 );
             }
-
             return;
         }
 
@@ -386,35 +401,54 @@ public class Chunk
                     DistanceSquared = Vector3.DistanceSquared(cameraPosition, _transparentQuads[i].Center)
                 });
             }
-
             _quadsToSort.Sort((a, b) => b.DistanceSquared.CompareTo(a.DistanceSquared));
 
             int quadCount = _quadsToSort.Count;
+
+            int totalIndexCount = 0;
+            foreach (var quadInfo in _quadsToSort)
+            {
+                totalIndexCount += 6; 
+                if (_transparentQuads[quadInfo.QuadIndex].IsTwoSided)
+                {
+                    totalIndexCount += 6;
+                }
+            }
+
             int vertexCount = quadCount * 4;
-            int indexCount = quadCount * 6;
 
             if (_sortedVertexArray == null || _sortedVertexArray.Length < vertexCount)
                 _sortedVertexArray = new QuantizedVertex[vertexCount];
-            if (_sortedIndexArray == null || _sortedIndexArray.Length < indexCount)
-                _sortedIndexArray = new int[indexCount];
+            if (_sortedIndexArray == null || _sortedIndexArray.Length < totalIndexCount)
+                _sortedIndexArray = new int[totalIndexCount];
 
+            int currentIndex = 0;
             for (int i = 0; i < quadCount; i++)
             {
                 var quad = _transparentQuads[_quadsToSort[i].QuadIndex];
                 int vertexOffset = i * 4;
-                int indexOffset = i * 6;
-
+                
                 _sortedVertexArray[vertexOffset + 0] = quad.V0;
                 _sortedVertexArray[vertexOffset + 1] = quad.V1;
                 _sortedVertexArray[vertexOffset + 2] = quad.V2;
                 _sortedVertexArray[vertexOffset + 3] = quad.V3;
 
-                _sortedIndexArray[indexOffset + 0] = vertexOffset + 0;
-                _sortedIndexArray[indexOffset + 1] = vertexOffset + 2;
-                _sortedIndexArray[indexOffset + 2] = vertexOffset + 1;
-                _sortedIndexArray[indexOffset + 3] = vertexOffset + 1;
-                _sortedIndexArray[indexOffset + 4] = vertexOffset + 2;
-                _sortedIndexArray[indexOffset + 5] = vertexOffset + 3;
+                _sortedIndexArray[currentIndex++] = vertexOffset + 0;
+                _sortedIndexArray[currentIndex++] = vertexOffset + 2;
+                _sortedIndexArray[currentIndex++] = vertexOffset + 1;
+                _sortedIndexArray[currentIndex++] = vertexOffset + 1;
+                _sortedIndexArray[currentIndex++] = vertexOffset + 2;
+                _sortedIndexArray[currentIndex++] = vertexOffset + 3;
+
+                if (quad.IsTwoSided)
+                {
+                    _sortedIndexArray[currentIndex++] = vertexOffset + 0;
+                    _sortedIndexArray[currentIndex++] = vertexOffset + 3;
+                    _sortedIndexArray[currentIndex++] = vertexOffset + 2;
+                    _sortedIndexArray[currentIndex++] = vertexOffset + 0;
+                    _sortedIndexArray[currentIndex++] = vertexOffset + 1;
+                    _sortedIndexArray[currentIndex++] = vertexOffset + 3;
+                }
             }
 
             if (_dynamicTransparentVertexBuffer == null || _dynamicTransparentVertexBuffer.VertexCount < vertexCount)
@@ -422,20 +456,19 @@ public class Chunk
                 _dynamicTransparentVertexBuffer?.Dispose();
                 _dynamicTransparentVertexBuffer = new VertexBuffer(graphicsDevice, typeof(QuantizedVertex), vertexCount, BufferUsage.WriteOnly);
             }
-            if (_dynamicTransparentIndexBuffer == null || _dynamicTransparentIndexBuffer.IndexCount < indexCount)
+            if (_dynamicTransparentIndexBuffer == null || _dynamicTransparentIndexBuffer.IndexCount < totalIndexCount)
             {
                 _dynamicTransparentIndexBuffer?.Dispose();
-                _dynamicTransparentIndexBuffer = new IndexBuffer(graphicsDevice, IndexElementSize.ThirtyTwoBits, indexCount, BufferUsage.WriteOnly);
+                _dynamicTransparentIndexBuffer = new IndexBuffer(graphicsDevice, IndexElementSize.ThirtyTwoBits, totalIndexCount, BufferUsage.WriteOnly);
             }
 
             _dynamicTransparentVertexBuffer.SetData(_sortedVertexArray, 0, vertexCount);
-            _dynamicTransparentIndexBuffer.SetData(_sortedIndexArray, 0, indexCount);
-            _lastValidDynamicIndexCount = indexCount;
+            _dynamicTransparentIndexBuffer.SetData(_sortedIndexArray, 0, totalIndexCount);
+            _lastValidDynamicIndexCount = totalIndexCount;
         }
 
         graphicsDevice.SetVertexBuffer(_dynamicTransparentVertexBuffer);
         graphicsDevice.Indices = _dynamicTransparentIndexBuffer;
-
         foreach (EffectPass pass in effect.CurrentTechnique.Passes)
         {
             pass.Apply();
