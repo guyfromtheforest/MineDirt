@@ -1,11 +1,11 @@
-﻿#if DEBUG
-using ImGuiNET;
+﻿using ImGuiNET;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using MineDirt.Src.Chunks;
 using MonoGame.ImGuiNet;
 using System;
 using System.Diagnostics;
+
 namespace MineDirt.Src;
 
 public class Debug
@@ -185,5 +185,3 @@ public class Debug
             MineDirtGame.Graphics.GraphicsDevice.RasterizerState = defaultRasterizeState;
     }
 }
-
-#endif

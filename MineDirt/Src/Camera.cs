@@ -47,6 +47,10 @@ public class Camera
     private bool mouseLeftWasDown = false;
     private bool mouseRightWasDown = false;
 
+    public bool IsUnderwater = false;
+    
+    private Vector3 lastFixedPosition = Vector3.Zero;
+
     public Camera(GraphicsDevice graphicsDevice, GameWindow gameWindow)
     {
         this.graphicsDevice = graphicsDevice;
@@ -80,6 +84,14 @@ public class Camera
         {
             UpdateView();
             UpdatePointedBlock();
+
+            if (Vector3.Floor(Position) != lastFixedPosition)
+            {
+                lastFixedPosition = Vector3.Floor(Position);
+
+                World.TryGetBlock(lastFixedPosition, out Block block);
+                IsUnderwater = block.Type == BlockType.Water;
+            }
         }
 
         if (triggered)

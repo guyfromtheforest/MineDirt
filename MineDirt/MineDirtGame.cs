@@ -9,9 +9,7 @@ namespace MineDirt;
 
 public class MineDirtGame : Game
 {
-#if DEBUG
     MineDirt.Src.Debug debug = new();
-#endif
 
     public static MineDirtGame Instance;
     public static GraphicsDeviceManager Graphics;
@@ -27,9 +25,16 @@ public class MineDirtGame : Game
 
     public static FastNoiseLite Noise = new(1234);
 
-    BasicEffect effect;
-    Effect blockShader;
+    private RenderTarget2D _renderTarget;
 
+    private BasicEffect effect;
+    private Effect blockShader;
+    
+    private Effect underwaterShader;
+    private EffectParameter isUnderwaterParam;
+
+    private EffectParameter timeParameter; 
+    
     public MineDirtGame()
     {
         Graphics = new GraphicsDeviceManager(this);
@@ -65,9 +70,7 @@ public class MineDirtGame : Game
         Noise.SetFractalGain(0.1f);
         Noise.SetFractalWeightedStrength(0.2f);
 
-#if DEBUG
         debug.Initialize();
-#endif
         base.Initialize();
     }
 
@@ -76,6 +79,11 @@ public class MineDirtGame : Game
         _spriteBatch = new SpriteBatch(GraphicsDevice);
 
         blockShader = Content.Load<Effect>("Shaders/BlockShader");
+        underwaterShader = Content.Load<Effect>("Shaders/UnderwaterShader");
+
+        isUnderwaterParam = underwaterShader.Parameters["IsUnderwater"];
+        timeParameter = underwaterShader.Parameters["Time"];
+
         TextureAtlas = Content.Load<Texture2D>("Textures/Blocks");
         Crosshair = Content.Load<Texture2D>("Textures/Crosshair");
         CrosshairPosition = new Vector2(
@@ -120,9 +128,10 @@ public class MineDirtGame : Game
         BlockRendering.Load(BlockType.Water, [35]);
         BlockRendering.Load(BlockType.Sand, [8]);
 
-#if DEBUG
+        var pp = GraphicsDevice.PresentationParameters;
+        _renderTarget = new RenderTarget2D(GraphicsDevice, pp.BackBufferWidth, pp.BackBufferHeight, false, pp.BackBufferFormat, pp.DepthStencilFormat);
+
         debug.LoadContent();
-#endif
     }
 
     protected override void Update(GameTime gameTime)
@@ -141,52 +150,54 @@ public class MineDirtGame : Game
         
         World.Update();
 
-#if DEBUG
         debug.Update(gameTime);
-#endif
         base.Update(gameTime);
     }
 
     protected override void Draw(GameTime gameTime)
     {
-#if DEBUG
         debug.BeginDraw(gameTime);
-#endif
 
+        GraphicsDevice.SetRenderTarget(_renderTarget);
         GraphicsDevice.Clear(Color.CornflowerBlue);
+
         GraphicsDevice.SamplerStates[0] = SamplerState.PointClamp;
         GraphicsDevice.DepthStencilState = DepthStencilState.Default;
-        GraphicsDevice.BlendState = BlendState.AlphaBlend;
-
-        effect.View = Camera.View;
-        effect.Projection = Camera.Projection;
+        GraphicsDevice.BlendState = BlendState.Opaque; // Use Opaque for the first pass!
 
         blockShader.Parameters["WorldViewProjection"].SetValue(Camera.View * Camera.Projection);
 
         World.DrawChunksOpaque(blockShader);
+        GraphicsDevice.BlendState = BlendState.AlphaBlend;
         World.DrawChunksTransparent(blockShader);
-
-        _spriteBatch.Begin();
-        _spriteBatch.Draw(Crosshair, CrosshairPosition, Color.White);
-        _spriteBatch.End();
 
         if (Camera.PointedBlock.Type != BlockType.Air)
         {
-            BoundingBox box = new(
+            BoundingBox box = new BoundingBox(
                 Camera.PointedBlockPosition,
-                Camera.PointedBlockPosition + Vector3.One
-            );
-
-            // DrawBoundingBox(box, graphicsDevice, effect);
+                Camera.PointedBlockPosition + Vector3.One);
 
             BoundingBoxRenderer.DrawHighlightBox(box, GraphicsDevice, effect);
         }
 
-        base.Draw(gameTime);
+        GraphicsDevice.SetRenderTarget(null);
+        GraphicsDevice.Clear(Color.Black);
 
-#if DEBUG
+        isUnderwaterParam.SetValue(Camera.IsUnderwater);
+        timeParameter.SetValue((float)gameTime.TotalGameTime.TotalSeconds);
+
+        _spriteBatch.Begin(effect: underwaterShader);
+        _spriteBatch.Draw(_renderTarget, Vector2.Zero, Color.White);
+        _spriteBatch.End();
+
+
+        _spriteBatch.Begin(); 
+        _spriteBatch.Draw(Crosshair, CrosshairPosition, Color.White);
+        _spriteBatch.End();
+
+        base.Draw(gameTime); 
+
         debug.EndDraw(gameTime);
-#endif
     }
 
     protected override void OnExiting(object sender, ExitingEventArgs args)

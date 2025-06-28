@@ -19,6 +19,12 @@
 /processorParam:DebugMode=Auto
 /build:Shaders/BlockShader.fx
 
+#begin Shaders/UnderwaterShader.fx
+/importer:EffectImporter
+/processor:EffectProcessor
+/processorParam:DebugMode=Auto
+/build:Shaders/UnderwaterShader.fx
+
 #begin Textures/Blocks.png
 /importer:TextureImporter
 /processor:TextureProcessor
