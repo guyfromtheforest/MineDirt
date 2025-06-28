@@ -1,43 +1,50 @@
-﻿float4x4 WorldViewProjection;
+﻿//--------------------------------------------------------------------------------------
+// Globals
+//--------------------------------------------------------------------------------------
+
+float4x4 WorldViewProjection;
 texture2D TextureAtlas : register(t0);
 float3 ChunkWorldPosition;
+
 sampler2D TextureSampler = sampler_state
 {
     texture = <TextureAtlas>;
 };
 
+//--------------------------------------------------------------------------------------
+// Structs
+//--------------------------------------------------------------------------------------
 struct VertexInput
 {
-    float2 TexCoord : TEXCOORD0;
+    float PackedUV : TEXCOORD0;
     float PackedPosition : TEXCOORD1;
 };
 
 struct VertexOutput
 {
     float4 Position : POSITION;
-    float2 TexCoord : TEXCOORD0;
+    float TileIndex : TEXCOORD0;
     float Light : COLOR0;
+    float2 UV : TEXCOORD1;
 };
+
+//--------------------------------------------------------------------------------------
+// Vertex Shader Helper Functions
+//--------------------------------------------------------------------------------------
 
 float3 UnpackAndOffset(float packedData)
 {
     float p = floor(packedData + 0.5);
-
     float p0_16 = floor(p / 16.0);
     float blockX = p - p0_16 * 16.0;
-
     float p1_16 = floor(p0_16 / 16.0);
     float blockZ = p0_16 - p1_16 * 16.0;
-
     float p2_8 = floor(p1_16 / 8.0);
     float cornerF = p1_16 - p2_8 * 8.0;
-
     float blockY = p2_8 % 256.0;
-
     float ox = cornerF - floor(cornerF / 2.0) * 2.0;
     float oy = floor(cornerF / 2.0) - floor(cornerF / 4.0) * 2.0;
     float oz = floor(cornerF / 4.0);
-
     return float3(blockX, blockY, blockZ) + float3(ox, oy, oz);
 }
 
@@ -48,41 +55,91 @@ float UnpackLight(float packedData)
     float p1_16 = floor(p0_16 / 16.0);
     float p2_8 = floor(p1_16 / 8.0);
     float lightVal_intermediate = floor(p2_8 / 256.0);
-
     return lerp(0.3, 1.0, lightVal_intermediate / 15.0);
 }
 
+float GetGlobalCornerID(float packedData)
+{
+    float p = floor(packedData + 0.5);
+    float p0_16 = floor(p / 16.0);
+    float p1_16 = floor(p0_16 / 16.0);
+    float p2_8 = floor(p1_16 / 8.0);
+    return p1_16 - p2_8 * 8.0;
+}
+
+float2 GetLocalUV(float globalCornerID, float faceID)
+{
+    float localCorner = 0.0;
+
+    // 0:Front[2,3,0,1], 1:Back[7,6,5,4], 2:Left[6,2,4,0], 3:Right[3,7,1,5], 4:Top[6,7,2,3], 5:Bottom[0,1,4,5]
+    if (faceID == 0.0) { if (globalCornerID == 2.0) localCorner = 0.0; else if (globalCornerID == 3.0) localCorner = 1.0; else if (globalCornerID == 0.0) localCorner = 2.0; else localCorner = 3.0; }
+    else if (faceID == 1.0) { if (globalCornerID == 7.0) localCorner = 0.0; else if (globalCornerID == 6.0) localCorner = 1.0; else if (globalCornerID == 5.0) localCorner = 2.0; else localCorner = 3.0; }
+    else if (faceID == 2.0) { if (globalCornerID == 6.0) localCorner = 0.0; else if (globalCornerID == 2.0) localCorner = 1.0; else if (globalCornerID == 4.0) localCorner = 2.0; else localCorner = 3.0; }
+    else if (faceID == 3.0) { if (globalCornerID == 3.0) localCorner = 0.0; else if (globalCornerID == 7.0) localCorner = 1.0; else if (globalCornerID == 1.0) localCorner = 2.0; else localCorner = 3.0; }
+    else if (faceID == 4.0) { if (globalCornerID == 6.0) localCorner = 0.0; else if (globalCornerID == 7.0) localCorner = 1.0; else if (globalCornerID == 2.0) localCorner = 2.0; else localCorner = 3.0; }
+    else { if (globalCornerID == 0.0) localCorner = 0.0; else if (globalCornerID == 1.0) localCorner = 1.0; else if (globalCornerID == 4.0) localCorner = 2.0; else localCorner = 3.0; }
+
+    // Convert local quad corner (0,1,2,3) to UVs using float math
+    float u = fmod(localCorner, 2.0);
+    float v = floor(localCorner / 2.0);
+    float2 localUV = float2(u, v);
+
+    return localUV;
+}
+
+//--------------------------------------------------------------------------------------
+// Vertex Shader
+//--------------------------------------------------------------------------------------
 VertexOutput VS_Main(VertexInput input)
 {
     VertexOutput output;
+
+    float packedUV = floor(input.PackedUV + 0.5);
+    float faceID = packedUV - floor(packedUV / 8.0) * 8.0;
+    output.TileIndex = floor(packedUV / 8.0);
 
     float3 coords = UnpackAndOffset(input.PackedPosition);
 
     float3 worldPos = coords + ChunkWorldPosition;
     output.Position = mul(float4(worldPos, 1.0f), WorldViewProjection);
 
-    output.TexCoord = input.TexCoord;
     output.Light = UnpackLight(input.PackedPosition);
-    
+
+    float globalCornerID = GetGlobalCornerID(input.PackedPosition);
+    output.UV = GetLocalUV(globalCornerID, faceID);
+
     return output;
 }
 
+//--------------------------------------------------------------------------------------
+// Pixel Shader
+//--------------------------------------------------------------------------------------
 float4 PS_Main(VertexOutput IN) : COLOR0
 {
-    float4 color = tex2D(TextureSampler, IN.TexCoord);
+    float tileIndex = floor(IN.TileIndex + 0.5);
+
+    // Tile position in 16x16 atlas
+    float tileY = floor(tileIndex / 16.0);
+    float tileX = tileIndex - tileY * 16.0;
+
+    // Final UV into atlas
+    float2 uv = (float2(tileX, tileY) + IN.UV) / 16.0;
+
+    float4 color = tex2D(TextureSampler, uv);
     color.rgb *= IN.Light;
 
-    static const float2 TileCount = float2(16, 16);
-    float2 localUV = frac(IN.TexCoord * TileCount);
-
-    float2 centered = localUV - 0.5;
-    float  dist = length(centered);
-    float  vig = IN.Light - smoothstep(0.01, 2.5, dist);
+    // Optional vignette
+    float2 centered = IN.UV - 0.5;
+    float dist = length(centered);
+    float vig = IN.Light - smoothstep(0.01, 2.5, dist);
     color.rgb *= vig;
 
     return color;
 }
 
+//--------------------------------------------------------------------------------------
+// Technique
+//--------------------------------------------------------------------------------------
 technique BasicTechnique
 {
     pass Pass1
