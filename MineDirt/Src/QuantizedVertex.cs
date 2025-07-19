@@ -34,7 +34,7 @@ public struct QuantizedVertex : IVertexType
 
     public static readonly VertexDeclaration VertexDeclaration = new(
         new VertexElement(0, VertexElementFormat.Single, VertexElementUsage.TextureCoordinate, 0),
-        new VertexElement(4, VertexElementFormat.Single, VertexElementUsage.TextureCoordinate, 1) // Use COLOR1 semantic
+        new VertexElement(4, VertexElementFormat.Single, VertexElementUsage.TextureCoordinate, 1)
     );
 
     VertexDeclaration IVertexType.VertexDeclaration => VertexDeclaration;
