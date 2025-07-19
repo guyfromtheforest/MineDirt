@@ -16,8 +16,8 @@ sampler2D TextureSampler = sampler_state
 //--------------------------------------------------------------------------------------
 struct VertexInput
 {
-    float PackedUV : TEXCOORD0;
-    float PackedPosition : TEXCOORD1;
+    float Packed0 : TEXCOORD0;
+    float Packed1 : TEXCOORD1;
 };
 
 struct VertexOutput
@@ -94,18 +94,18 @@ VertexOutput VS_Main(VertexInput input)
 {
     VertexOutput output;
 
-    float packedUV = floor(input.PackedUV + 0.5);
+    float packedUV = floor(input.Packed0 + 0.5);
     float faceID = packedUV - floor(packedUV / 8.0) * 8.0;
     output.TileIndex = floor(packedUV / 8.0);
 
-    float3 coords = UnpackAndOffset(input.PackedPosition);
+    float3 coords = UnpackAndOffset(input.Packed1);
 
     float3 worldPos = coords + ChunkWorldPosition;
     output.Position = mul(float4(worldPos, 1.0f), WorldViewProjection);
 
-    output.Light = UnpackLight(input.PackedPosition);
+    output.Light = UnpackLight(input.Packed1);
 
-    float globalCornerID = GetGlobalCornerID(input.PackedPosition);
+    float globalCornerID = GetGlobalCornerID(input.Packed1);
     output.UV = GetLocalUV(globalCornerID, faceID);
 
     return output;

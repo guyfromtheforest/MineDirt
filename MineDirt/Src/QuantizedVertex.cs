@@ -7,14 +7,14 @@ namespace MineDirt.Src;
 
 public struct QuantizedVertex : IVertexType
 {
-    public float UV;
-    public float PackedPosition;
+    public float Packed0;
+    public float Packed1;
 
     public QuantizedVertex(Vector3 blockPos, int textureIndex, int lightLevel, int cornerID, int faceIndex)
     {
         int packedUV = (textureIndex << 3) | faceIndex;
 
-        UV = packedUV;
+        Packed0 = packedUV;
 
         int bx = (int)blockPos.X & 0xF;    // 4 bits: 0–15
         int bz = (int)blockPos.Z & 0xF;    // 4 bits: 0–15
@@ -29,7 +29,7 @@ public struct QuantizedVertex : IVertexType
             | (by << 11)
             | (lightLevel << 19);
 
-        PackedPosition = (float)packed;
+        Packed1 = (float)packed;
     }
 
     public static readonly VertexDeclaration VertexDeclaration = new(
