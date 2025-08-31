@@ -9,8 +9,9 @@ public struct QuantizedVertex : IVertexType
 {
     public float Packed0;
     public float Packed1;
+    public float Packed2; //used only for AO for now, in future it can be used for lighting
 
-    public QuantizedVertex(Vector3 blockPos, int textureIndex, int lightLevel, int cornerID, int faceIndex)
+    public QuantizedVertex(Vector3 blockPos, int textureIndex, int lightLevel, int cornerID, int faceIndex, float AO = 0f)
     {
         int packedUV = (textureIndex << 3) | faceIndex;
 
@@ -30,11 +31,13 @@ public struct QuantizedVertex : IVertexType
             | (lightLevel << 19);
 
         Packed1 = (float)packed;
+        Packed2 = AO;
     }
 
     public static readonly VertexDeclaration VertexDeclaration = new(
         new VertexElement(0, VertexElementFormat.Single, VertexElementUsage.TextureCoordinate, 0),
-        new VertexElement(4, VertexElementFormat.Single, VertexElementUsage.TextureCoordinate, 1)
+        new VertexElement(4, VertexElementFormat.Single, VertexElementUsage.TextureCoordinate, 1),
+        new VertexElement(8, VertexElementFormat.Single, VertexElementUsage.Color, 0)
     );
 
     VertexDeclaration IVertexType.VertexDeclaration => VertexDeclaration;

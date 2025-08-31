@@ -164,6 +164,9 @@ public class Chunk
 
                 if (block.IsOpaque)
                 {
+
+                    //TODO: AO for each vertex
+
                     allVertices.AddRange(faceVertices);
                     for (byte i = 0; i < BlockRendering.Indices.Length; i++)
                         allIndices.Add(BlockRendering.Indices[i] + vertexOffset);

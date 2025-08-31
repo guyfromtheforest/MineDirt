@@ -53,6 +53,16 @@ namespace MineDirt.Src
             };
         }
 
+        public static int GetAO(int side1, int side2, int corner){
+
+            //0: corner + sides | 1: corner + side | 2: only corner/side | 3: none
+
+            if(side1 == 1 && side2 == 1) 
+                return 0; 
+
+            return 3 - (side1 + side2 + corner);
+        }
+
         private static int GetFaceTextureIndex(BlockType blockType, byte faceIndex)
         {
             int[] blockTextures = _textures[blockType];

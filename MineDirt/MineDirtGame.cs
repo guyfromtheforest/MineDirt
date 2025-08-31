@@ -46,11 +46,12 @@ public class MineDirtGame : Game
         IsFixedTimeStep = false;
 
         // Set to fullscreen
+        Graphics.HardwareModeSwitch = false; //don't change the monitor resolution
         Graphics.IsFullScreen = true;
 
         // Set the resolution for fullscreen mode
-        Graphics.PreferredBackBufferWidth = 2560; // Set your preferred width
-        Graphics.PreferredBackBufferHeight = 1440; // Set your preferred height
+        Graphics.PreferredBackBufferWidth = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width;//2560; // Set your preferred width
+        Graphics.PreferredBackBufferHeight = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height;//1440; // Set your preferred height
         Graphics.ApplyChanges();
 
         Instance = this;
@@ -117,6 +118,8 @@ public class MineDirtGame : Game
                 )
             );
         blockShader.Parameters["TextureAtlas"].SetValue(TextureAtlas);
+        blockShader.Parameters["FogColor"].SetValue(Color.CornflowerBlue.ToVector4());
+        blockShader.Parameters["FogDensity"].SetValue(0.007f);
 
         // Load the block textures
         BlockRendering.Load(BlockType.Dirt, [2]);

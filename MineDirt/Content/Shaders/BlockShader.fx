@@ -2,6 +2,10 @@
 // Globals
 //--------------------------------------------------------------------------------------
 
+extern float4 FogColor;
+extern float FogDensity = 0.007;
+static const float FogGradient = 1.5;
+
 float4x4 WorldViewProjection;
 texture2D TextureAtlas : register(t0);
 float3 ChunkWorldPosition;
@@ -18,6 +22,7 @@ struct VertexInput
 {
     float Packed0 : TEXCOORD0;
     float Packed1 : TEXCOORD1;
+    float Packed2 : COLOR0;
 };
 
 struct VertexOutput
@@ -26,6 +31,9 @@ struct VertexOutput
     float TileIndex : TEXCOORD0;
     float Light : COLOR0;
     float2 UV : TEXCOORD1;
+    float Fog : COLOR1;
+    float AO : TEXCOORD2;
+
 };
 
 //--------------------------------------------------------------------------------------
@@ -108,6 +116,12 @@ VertexOutput VS_Main(VertexInput input)
     float globalCornerID = GetGlobalCornerID(input.Packed1);
     output.UV = GetLocalUV(globalCornerID, faceID);
 
+    float fogdist = length(output.Position.xyz);
+    output.Fog = exp(-pow(fogdist*FogDensity,FogGradient));
+    output.Fog = clamp(output.Fog,0.0,1.0);
+
+    output.AO = input.Packed2;
+
     return output;
 }
 
@@ -129,10 +143,14 @@ float4 PS_Main(VertexOutput IN) : COLOR0
     color.rgb *= IN.Light;
 
     // Optional vignette
-    float2 centered = IN.UV - 0.5;
+    /*float2 centered = IN.UV - 0.5;
     float dist = length(centered);
     float vig = IN.Light - smoothstep(0.01, 2.5, dist);
-    color.rgb *= vig;
+    color.rgb *= vig;*/
+    color.rgb *= 1.0-IN.AO;
+    
+    color.rgb = lerp(FogColor.rgb,color.rgb,IN.Fog);
+    color.a = lerp(1.0,color.a,IN.Fog); //Water appears a shade lighter otherwise
 
     return color;
 }
