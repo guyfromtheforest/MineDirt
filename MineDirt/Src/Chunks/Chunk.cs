@@ -165,6 +165,7 @@ public class Chunk
                 if (block.IsOpaque)
                 {
 
+
                     //TODO: AO for each vertex
 
                     allVertices.AddRange(faceVertices);

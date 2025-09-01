@@ -238,10 +238,17 @@ public class Camera
 
     public void UpdatePointedBlock()
     {
-        Vector3 rayPosition = Position;
-        Vector3 rayDirection = Vector3.Normalize(Forward);
+        /*Vector3 rayPosition = Position;
+        Vector3 rayDirection = Vector3.Normalize(Forward);*/
 
-        Vector3 lastPosition;
+        World.RayCast(new Ray(Position, Vector3.Normalize(Forward)), (int)ReachDistance,
+            out PointedBlockPosition,
+            out PointedBlockFace,
+            out Block block
+        );
+        PointedBlock = block;
+
+        /*Vector3 lastPosition;
 
         for (float t = 0; t < ReachDistance; t += 0.01f)
         {
@@ -266,6 +273,6 @@ public class Camera
 
         PointedBlockPosition = default;
         PointedBlock = default;
-        PointedBlockFace = default;
+        PointedBlockFace = default;*/
     }
 }

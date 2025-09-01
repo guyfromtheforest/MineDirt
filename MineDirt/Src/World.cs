@@ -269,4 +269,72 @@ public static class World
         block = default;
         return false;
     }
+
+    //returns Position, Face and Block
+    public static void RayCast(Ray ray, int distance, out Vector3 pos, out Vector3 face, out Block block){
+
+        Vector3 start = Vector3.Floor(ray.Position);
+        int x = (int)start.X;
+        int y = (int)start.Y;
+        int z = (int)start.Z;
+        int stepX = Math.Sign(ray.Direction.X);
+        int stepY = Math.Sign(ray.Direction.Y);
+        int stepZ = Math.Sign(ray.Direction.Z);
+
+        Vector3 cellbounds = new Vector3(
+        x + (stepX > 0 ? 1 : 0),
+        y + (stepY > 0 ? 1 : 0),
+        z + (stepZ > 0 ? 1 : 0));
+
+        Vector3 tMax = new Vector3(
+        (cellbounds.X - ray.Position.X) / ray.Direction.X,
+        (cellbounds.Y - ray.Position.Y) / ray.Direction.Y,
+        (cellbounds.Z - ray.Position.Z) / ray.Direction.Z);
+        if (float.IsNaN(tMax.X)) tMax.X = float.PositiveInfinity;
+        if (float.IsNaN(tMax.Y)) tMax.Y = float.PositiveInfinity;
+        if (float.IsNaN(tMax.Z)) tMax.Z = float.PositiveInfinity;
+
+        Vector3 tDelta = new Vector3(
+        stepX / ray.Direction.X,
+        stepY / ray.Direction.Y,
+        stepZ / ray.Direction.Z);
+        if (float.IsNaN(tDelta.X)) tDelta.X = float.PositiveInfinity;
+        if (float.IsNaN(tDelta.Y)) tDelta.Y = float.PositiveInfinity;
+        if (float.IsNaN(tDelta.Z)) tDelta.Z = float.PositiveInfinity;
+
+        pos = default; face = default; block = default;
+        Vector3 lastPoint;
+
+        for (int i = 0; i < distance; i++){
+
+            lastPoint = new(x,y,z);
+            if (tMax.X < tMax.Y && tMax.X < tMax.Z)
+            {
+                x += stepX;
+                tMax.X += tDelta.X;
+            }
+            else if (tMax.Y < tMax.Z)
+            {
+                y += stepY;
+                tMax.Y += tDelta.Y;
+            }
+            else
+            {
+                z += stepZ;
+                tMax.Z += tDelta.Z;
+            }
+            Vector3 point = new(x,y,z);
+            if(TryGetBlock(point, out Block b)){
+                if (b.Type == BlockType.Air){
+                    continue;
+                }else{
+                    pos = point;
+                    face = Vector3.Floor(lastPoint) - point;
+                    block = b;
+                    return;
+                }
+            }
+        }
+
+    }
 }
