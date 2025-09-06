@@ -2,9 +2,11 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using MineDirt.Src.Chunks;
+using MineDirt.Src.Scene;
 using MonoGame.ImGuiNet;
 using System;
 using System.Diagnostics;
+using Nvec3 = System.Numerics.Vector3;
 
 namespace MineDirt.Src;
 
@@ -40,6 +42,28 @@ public class Debug
 
     private bool RenderWireframes = false;
 
+#region Environment
+
+    EnvironmentSystem env;
+
+    private Nvec3 fogColor = Color.CornflowerBlue.ToVector3().ToNumerics();
+    private Nvec3 skylightColor = Nvec3.One;
+    private float fogDensity = 0.005f;
+    private Nvec3 sundir = new Nvec3(15f,15f,0f);
+
+    private Nvec3 dc;
+    private Nvec3 dbc;
+    private Nvec3 sc;
+    private Nvec3 sbc;
+    private Nvec3 nc;
+    private Nvec3 nbc;
+
+#if DEBUG
+    private int sky_disp = 0;
+#endif
+
+#endregion
+
     private RasterizerState wireFrameRasterizeState = new()
     {
         FillMode = FillMode.WireFrame,
@@ -60,6 +84,20 @@ public class Debug
     public void LoadContent()
     {
         GuiRenderer.RebuildFontAtlas();
+        env = World.Environment;
+        Matrix rot = Matrix.CreateFromYawPitchRoll(
+        MathHelper.ToRadians(sundir.X), 
+        MathHelper.ToRadians(sundir.Y), 
+            0f
+        );
+        env.SunDirection = Vector3.TransformNormal(Vector3.Forward,rot);
+
+        dc  = env.Sky.DayColor.ToVector3().ToNumerics();
+        dbc = env.Sky.DayBottomColor.ToVector3().ToNumerics();
+        sc  = env.Sky.SunsetColor.ToVector3().ToNumerics();
+        sbc = env.Sky.SunsetBottomColor.ToVector3().ToNumerics();
+        nc  = env.Sky.NightColor.ToVector3().ToNumerics();
+        nbc = env.Sky.NightBottomColor.ToVector3().ToNumerics();
     }
 
     public void Update(GameTime gameTime)
@@ -170,6 +208,77 @@ public class Debug
                 MineDirtGame.Camera.Position = TeleportPos;
                 MineDirtGame.Camera.UpdateView();
             }
+        }
+
+        if(ImGui.Begin("Environment"))
+        {
+            // Create an ImGui window for camera coordinates
+            if (!hasFirstDrawFinished)
+            {
+                ImGui.SetWindowSize(new System.Numerics.Vector2(400, 320));
+            }
+
+            if(ImGui.SliderFloat("Fog density",ref fogDensity, 0f, 0.1f)){
+                env.FogDensity = fogDensity;
+            }
+            ImGui.Separator();
+            if(ImGui.SliderFloat3("Sun direction",ref sundir, 0f, 360f)){
+
+                Matrix rot = Matrix.CreateFromYawPitchRoll(
+                    MathHelper.ToRadians(sundir.X), 
+                    MathHelper.ToRadians(sundir.Y), 
+                    MathHelper.ToRadians(sundir.Z)
+                );
+                env.SunDirection = Vector3.TransformNormal(Vector3.Forward,rot);
+            }
+
+#if DEBUG
+            if(ImGui.Combo("Sky debug display",ref sky_disp, [
+                "None", "Position", "X axis", "Y axis", "Z axis", "Astro UV"
+            ], 6)){
+                World.Sky.DisplayMode = (Sky.DebugDisplayMode)sky_disp;
+            }
+#endif
+
+            if(ImGui.CollapsingHeader("Fog color")){
+                if(ImGui.ColorPicker3("Fog color: ", ref fogColor)){
+                    env.FogColor = new Color(fogColor);
+                }
+            }
+
+            if(ImGui.CollapsingHeader("Sky light color")){
+                if(ImGui.ColorPicker3("Sky light color: ", ref skylightColor)){
+                    env.SkyLightColor = new Color(skylightColor);
+                }
+            }
+
+            if(ImGui.CollapsingHeader("Day colors")){
+                if(ImGui.ColorPicker3("Top", ref dc)){
+                    env.Sky.DayColor = new Color(dc);
+                }
+                if(ImGui.ColorPicker3("Bottom", ref dbc)){
+                    env.Sky.DayBottomColor = new Color(dbc);
+                }
+            }
+
+            if(ImGui.CollapsingHeader("Sunset colors")){
+                if(ImGui.ColorPicker3("Top", ref sc)){
+                    env.Sky.SunsetColor = new Color(sc);
+                }
+                if(ImGui.ColorPicker3("Bottom", ref sbc)){
+                    env.Sky.SunsetBottomColor = new Color(sbc);
+                }
+            }
+
+            if(ImGui.CollapsingHeader("Night colors")){
+                if(ImGui.ColorPicker3("Top", ref nc)){
+                    env.Sky.NightColor = new Color(nc);
+                }
+                if(ImGui.ColorPicker3("Bottom", ref nbc)){
+                    env.Sky.NightBottomColor = new Color(nbc);
+                }
+            }
+
         }
 
         GuiRenderer.EndLayout();

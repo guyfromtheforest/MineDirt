@@ -36,6 +36,8 @@ public class Camera
 
     public Vector3 Position = new(0, 100, 0);
 
+    public float AspectRatio;
+
     public Vector3 Forward;
     public Matrix RotationMatrix;
 
@@ -67,8 +69,8 @@ public class Camera
 
     public void UpdateProjection()
     {
-        float aspectRatio = graphicsDevice.Viewport.Width / (float)graphicsDevice.Viewport.Height;
-        Projection = Matrix.CreatePerspectiveFieldOfView(fieldOfViewDegrees * (float)((3.14159265358f) / 180f), aspectRatio, .1f, ViewDistance);
+        AspectRatio = graphicsDevice.Viewport.Width / (float)graphicsDevice.Viewport.Height;
+        Projection = Matrix.CreatePerspectiveFieldOfView(fieldOfViewDegrees * (float)((3.14159265358f) / 180f), AspectRatio, .1f, ViewDistance);
     }
 
     public void Update(GameTime gameTime)

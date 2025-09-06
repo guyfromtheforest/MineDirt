@@ -6,11 +6,15 @@ using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using MineDirt.Src.Chunks;
+using MineDirt.Src.Scene;
 
 namespace MineDirt.Src;
 
-public static class World
-{
+public static class World{
+
+    public static EnvironmentSystem Environment {get; private set;}
+    public static Sky Sky{get; private set;}
+
     public static ConcurrentDictionary<Vector3, Chunk> Chunks = [];
     public static ConcurrentQueue<Action> ChunkBufferGenerationQueue = new ConcurrentQueue<Action>();
     private static IOrderedEnumerable<KeyValuePair<Vector3, Chunk>> sortedChunks;
@@ -21,7 +25,10 @@ public static class World
     public static TaskProcessor MeshThreadPool = new(); // Number of threads to use for world generation and mesh building
     private const int ChunksPerFrame = 4; // Number of chunks to process per frame
 
-    public static void Initialize() { }
+    public static void Initialize() {
+        Sky = new(MineDirtGame.Instance.skyboxshader);
+        Environment = new(MineDirtGame.Instance.blockShader,Sky);
+    }
 
     private static Vector3 lastCameraChunkPosition = new(0, -1, 0);
 
@@ -303,11 +310,11 @@ public static class World
         if (float.IsNaN(tDelta.Z)) tDelta.Z = float.PositiveInfinity;
 
         pos = default; face = default; block = default;
-        Vector3 lastPoint;
+        Vector3 lastPoint = start;
 
         for (int i = 0; i < distance; i++){
 
-            lastPoint = new(x,y,z);
+            Vector3 point = new(x,y,z);
             if (tMax.X < tMax.Y && tMax.X < tMax.Z)
             {
                 x += stepX;
@@ -323,13 +330,13 @@ public static class World
                 z += stepZ;
                 tMax.Z += tDelta.Z;
             }
-            Vector3 point = new(x,y,z);
             if(TryGetBlock(point, out Block b)){
                 if (b.Type == BlockType.Air){
+                    lastPoint = point;
                     continue;
                 }else{
                     pos = point;
-                    face = Vector3.Floor(lastPoint) - point;
+                    face = lastPoint - point;
                     block = b;
                     return;
                 }

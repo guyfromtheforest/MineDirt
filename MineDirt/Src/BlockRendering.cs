@@ -30,17 +30,17 @@ namespace MineDirt.Src
             for (int i = 0; i < 4; i++)
             {
                 Vector3 finalPos = blockLocalPos; 
-                int light = GetLightForFace(faceIndex);
+                //int normal = GetNormalForFace(faceIndex);
 
-                vertices[i] = new QuantizedVertex(finalPos, textureIndex, light, corners[i], faceIndex);
+                vertices[i] = new QuantizedVertex(finalPos, textureIndex, corners[i], faceIndex);
             }
 
             return vertices;
         }
 
-        private static int GetLightForFace(byte faceIndex)
+        /*private static int GetNormalForFace(byte faceIndex) //I didn't end up using it :(
         {
-            // Simple lighting based on face direction
+
             return faceIndex switch
             {
                 4 => 15,  // Top
@@ -51,7 +51,7 @@ namespace MineDirt.Src
                 5 => 8,  // Bottom
                 _ => 1
             };
-        }
+        }*/
 
         public static int GetAO(int side1, int side2, int corner){
 

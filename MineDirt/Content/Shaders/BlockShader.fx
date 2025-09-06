@@ -1,10 +1,8 @@
-﻿//--------------------------------------------------------------------------------------
+﻿#include "Common/EnvironmentCommon.fxh"
+
+//--------------------------------------------------------------------------------------
 // Globals
 //--------------------------------------------------------------------------------------
-
-extern float4 FogColor;
-extern float FogDensity = 0.007;
-static const float FogGradient = 1.5;
 
 float4x4 WorldViewProjection;
 texture2D TextureAtlas : register(t0);
@@ -22,17 +20,17 @@ struct VertexInput
 {
     float Packed0 : TEXCOORD0;
     float Packed1 : TEXCOORD1;
-    float Packed2 : COLOR0;
+    //float Packed2 : COLOR0;
 };
 
 struct VertexOutput
 {
     float4 Position : POSITION;
     float TileIndex : TEXCOORD0;
-    float Light : COLOR0;
+    float3 Normal : TEXCOORD2;
     float2 UV : TEXCOORD1;
     float Fog : COLOR1;
-    float AO : TEXCOORD2;
+    //float AO : TEXCOORD2;
 
 };
 
@@ -56,14 +54,21 @@ float3 UnpackAndOffset(float packedData)
     return float3(blockX, blockY, blockZ) + float3(ox, oy, oz);
 }
 
-float UnpackLight(float packedData)
-{
-    float p = floor(packedData + 0.5);
+float3 GetNormal(int index){
+
+    /*float p = floor(packedData + 0.5);
     float p0_16 = floor(p / 16.0);
     float p1_16 = floor(p0_16 / 16.0);
     float p2_8 = floor(p1_16 / 8.0);
-    float lightVal_intermediate = floor(p2_8 / 256.0);
-    return lerp(0.3, 1.0, lightVal_intermediate / 15.0);
+    float index = floor(p2_8 / 256.0);*/
+
+    if (index == 0) return float3(-1, 0, 0);
+    else if (index == 1) return float3(1, 0, 0);
+    else if (index == 2) return float3(0, 1, 0);
+    else if (index == 3) return float3(0,-1, 0);
+    else if (index == 4) return float3(0, 0, 1);
+    else return float3(0, 0,-1); // index == 5
+
 }
 
 float GetGlobalCornerID(float packedData)
@@ -111,16 +116,12 @@ VertexOutput VS_Main(VertexInput input)
     float3 worldPos = coords + ChunkWorldPosition;
     output.Position = mul(float4(worldPos, 1.0f), WorldViewProjection);
 
-    output.Light = UnpackLight(input.Packed1);
+    output.Normal = GetNormal(faceID).yzx; //lazy fix.
 
     float globalCornerID = GetGlobalCornerID(input.Packed1);
     output.UV = GetLocalUV(globalCornerID, faceID);
 
-    float fogdist = length(output.Position.xyz);
-    output.Fog = exp(-pow(fogdist*FogDensity,FogGradient));
-    output.Fog = clamp(output.Fog,0.0,1.0);
-
-    output.AO = input.Packed2;
+    output.Fog = GetFogAt(output.Position);
 
     return output;
 }
@@ -140,17 +141,17 @@ float4 PS_Main(VertexOutput IN) : COLOR0
     float2 uv = (float2(tileX, tileY) + IN.UV) / 16.0;
 
     float4 color = tex2D(TextureSampler, uv);
-    color.rgb *= IN.Light;
+    //color.rgb *= IN.Normal;
 
     // Optional vignette
     /*float2 centered = IN.UV - 0.5;
     float dist = length(centered);
     float vig = IN.Light - smoothstep(0.01, 2.5, dist);
     color.rgb *= vig;*/
-    color.rgb *= 1.0-IN.AO;
-    
-    color.rgb = lerp(FogColor.rgb,color.rgb,IN.Fog);
-    color.a = lerp(1.0,color.a,IN.Fog); //Water appears a shade lighter otherwise
+    //color.rgb *= 1.0-IN.AO;
+
+    ApplySkyLight(color, IN.Normal);
+    ApplyFog(color,IN.Fog);
 
     return color;
 }

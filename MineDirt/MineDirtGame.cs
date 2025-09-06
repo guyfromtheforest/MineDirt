@@ -28,7 +28,8 @@ public class MineDirtGame : Game
     private RenderTarget2D _renderTarget;
 
     private BasicEffect effect;
-    private Effect blockShader;
+    public Effect blockShader;
+    public Effect skyboxshader;
     
     private Effect underwaterShader;
     private EffectParameter isUnderwaterParam;
@@ -60,7 +61,6 @@ public class MineDirtGame : Game
     protected override void Initialize()
     {
         Camera = new Camera(GraphicsDevice, Window);
-        World.Initialize();
 
         // Set noise parameters
         Noise.SetNoiseType(FastNoiseLite.NoiseType.Perlin);
@@ -81,6 +81,7 @@ public class MineDirtGame : Game
 
         blockShader = Content.Load<Effect>("Shaders/BlockShader");
         underwaterShader = Content.Load<Effect>("Shaders/UnderwaterShader");
+        skyboxshader = Content.Load<Effect>("Shaders/Sky");
 
         isUnderwaterParam = underwaterShader.Parameters["IsUnderwater"];
         timeParameter = underwaterShader.Parameters["Time"];
@@ -118,8 +119,6 @@ public class MineDirtGame : Game
                 )
             );
         blockShader.Parameters["TextureAtlas"].SetValue(TextureAtlas);
-        blockShader.Parameters["FogColor"].SetValue(Color.CornflowerBlue.ToVector4());
-        blockShader.Parameters["FogDensity"].SetValue(0.007f);
 
         // Load the block textures
         BlockRendering.Load(BlockType.Dirt, [2]);
@@ -134,6 +133,7 @@ public class MineDirtGame : Game
         var pp = GraphicsDevice.PresentationParameters;
         _renderTarget = new RenderTarget2D(GraphicsDevice, pp.BackBufferWidth, pp.BackBufferHeight, false, pp.BackBufferFormat, pp.DepthStencilFormat);
 
+        World.Initialize();
         debug.LoadContent();
     }
 
@@ -162,16 +162,16 @@ public class MineDirtGame : Game
         debug.BeginDraw(gameTime);
 
         GraphicsDevice.SetRenderTarget(_renderTarget);
-        GraphicsDevice.Clear(Color.CornflowerBlue);
+        GraphicsDevice.Clear(Color.White);
 
         GraphicsDevice.SamplerStates[0] = SamplerState.PointClamp;
-        GraphicsDevice.DepthStencilState = DepthStencilState.Default;
         GraphicsDevice.BlendState = BlendState.Opaque; // Use Opaque for the first pass!
-
-        blockShader.Parameters["WorldViewProjection"].SetValue(Camera.View * Camera.Projection);
 
         effect.View = Camera.View;
         effect.Projection = Camera.Projection;
+        World.Sky.Draw(GraphicsDevice,skyboxshader,Camera);
+
+        blockShader.Parameters["WorldViewProjection"].SetValue(Camera.View * Camera.Projection);
 
         World.DrawChunksOpaque(blockShader);
         GraphicsDevice.BlendState = BlendState.AlphaBlend;
